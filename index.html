@@ -1,1086 +1,3517 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phúc Tea · Operations Hub</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS for Excel exports -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        :root {
-            --brown: #3D2B1F;
-            --brown-light: #5A4435;
-            --gold: #F5A623;
-            --gold-soft: #FDEBD0;
-            --cream: #FAF7F2;
-            --white: #FFFFFF;
-            --gray: #718096;
-            --gray-light: #EDF2F7;
-            --green: #2D8248;
-            --green-bg: #E6F4EA;
-            --red: #E53E3E;
-            --red-bg: #FFF5F5;
-            --shadow: 0 4px 20px rgba(0,0,0,0.05);
-            --shadow-lg: 0 10px 30px rgba(61,43,31,0.1);
-            --radius: 16px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Ops Center – Phúc Tea</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --gold: #F5A623;
+      --gold-l: #FDF3E3;
+      --gold-m: #F7C56E;
+      --brown: #3D2B1F;
+      --brown-m: #6B4226;
+      --brown-l: #9C6B47;
+      --cream: #FAF7F2;
+      --white: #fff;
+      --red: #E53E3E;
+      --red-l: #FFF5F5;
+      --green: #2D8248;
+      --green-l: #F0FFF4;
+      --blue: #2B6CB0;
+      --blue-l: #EBF8FF;
+      --teal: #0D9488;
+      --teal-l: #F0FDFA;
+      --purple: #6B46C1;
+      --purple-l: #FAF5FF;
+      --gray: #718096;
+      --gray-l: #F7F8FA;
+      --border: #E8E0D4;
+      --sh: 0 2px 12px rgba(61, 43, 31, .08);
+      --shm: 0 4px 24px rgba(61, 43, 31, .13);
+      --r: 12px;
+      --rs: 8px;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
-        body { 
-            font-family: 'Be Vietnam Pro', sans-serif; 
-            background: var(--cream); 
-            color: var(--brown); 
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-        /* ── LAYOUT ── */
-        .app-container { display: flex; min-height: 100vh; }
-        
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            background: var(--brown);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            z-index: 100;
-            color: rgba(255,255,255,0.8);
-            transition: var(--transition);
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 40px;
-            padding: 0 8px;
-        }
-        .logo-box {
-            background: var(--gold);
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            color: var(--brown);
-            font-size: 20px;
-        }
-        .logo-text { color: var(--white); font-weight: 700; font-size: 18px; letter-spacing: -0.5px; }
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent
+    }
 
-        .nav-list { list-style: none; flex: 1; }
-        .nav-item {
-            padding: 14px 16px;
-            margin-bottom: 8px;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-            transition: var(--transition);
-            font-size: 14px;
-        }
-        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--white); }
-        .nav-item.active { background: var(--gold); color: var(--brown); font-weight: 600; box-shadow: 0 4px 12px rgba(245,166,35,0.3); }
-        .nav-item i { font-size: 18px; width: 24px; text-align: center; }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px
+    }
 
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: 260px;
-            padding: 32px 40px;
-            max-width: 1600px;
-        }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 10px
+    }
 
-        /* ── COMPONENTS ── */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
-        }
-        .welcome h1 { font-size: 28px; font-weight: 700; color: var(--brown); margin-bottom: 4px; }
-        .welcome p { color: var(--gray); font-size: 14px; }
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: var(--cream);
+      color: var(--brown)
+    }
 
-        .top-actions { display: flex; gap: 12px; }
-        .btn {
-            padding: 10px 18px;
-            border-radius: 10px;
-            border: none;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-        .btn-primary { background: var(--brown); color: var(--white); }
-        .btn-primary:hover { background: var(--brown-light); transform: translateY(-2px); }
-        .btn-gold { background: var(--gold); color: var(--brown); }
-        .btn-gold:hover { background: #e0961d; transform: translateY(-2px); }
-        .btn-outline { background: var(--white); border: 1.5px solid var(--gray-light); color: var(--brown); }
-        .btn-outline:hover { background: var(--gray-light); }
+    .load {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(250, 247, 242, .92);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px
+    }
 
-        .badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-green { background: var(--green-bg); color: var(--green); }
-        .badge-red { background: var(--red-bg); color: var(--red); }
-        .badge-gold { background: var(--gold-soft); color: #B7791F; }
+    .load.on {
+      display: flex
+    }
 
-        /* ── DASHBOARD CARDS ── */
-        .grid-kpi {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        .kpi-card {
-            background: var(--white);
-            padding: 24px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(232, 224, 212, 0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-        .kpi-card::after {
-            content: ''; position: absolute; top: -20px; right: -20px;
-            width: 80px; height: 80px; border-radius: 50%;
-            background: var(--cream); opacity: 0.5; z-index: 0;
-        }
-        .kpi-val { font-size: 32px; font-weight: 800; color: var(--brown); z-index: 1; }
-        .kpi-label { color: var(--gray); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; z-index: 1; }
-        .kpi-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; z-index: 1; }
-        .kpi-trend.up { color: var(--green); }
+    .spin {
+      width: 42px;
+      height: 42px;
+      border: 4px solid var(--border);
+      border-top: 4px solid var(--gold);
+      border-radius: 50%;
+      animation: sp .8s linear infinite
+    }
 
-        .prog-container { width: 100%; background: var(--gray-light); height: 8px; border-radius: 4px; margin-top: 8px; position: relative; }
-        .prog-bar { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.1, 0, 0, 1); }
+    @keyframes sp {
+      to {
+        transform: rotate(360deg)
+      }
+    }
 
-        /* ── SECTION STYLES ── */
-        .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px; border: 1px solid rgba(232, 224, 212, 0.5); }
+    .load-msg {
+      font-size: 13px;
+      color: var(--gray);
+      font-weight: 500
+    }
 
-        /* ── SETUP & KT ── */
-        .setup-filters { display: flex; gap: 12px; margin-bottom: 20px; }
-        .filter-select { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--gray-light); font-size: 13px; color: var(--brown); min-width: 180px; cursor: pointer; }
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      padding: 12px 17px;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 9100;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s;
+      max-width: 340px;
+      box-shadow: var(--shm)
+    }
 
-        .setup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .store-card {
-            background: var(--white); border-radius: var(--radius); padding: 20px;
-            border: 1px solid var(--gray-light); transition: var(--transition);
-            cursor: pointer; position: relative;
-        }
-        .store-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--gold); }
-        .store-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-        .store-card .info { font-size: 12px; color: var(--gray); display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
-        .store-card .progress-section { margin-top: 12px; border-top: 1px solid var(--gray-light); padding-top: 12px; }
+    .toast.on {
+      transform: translateY(0);
+      opacity: 1
+    }
 
-        /* ── MODALS ── */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(61,43,31,0.6); backdrop-filter: blur(4px);
-            z-index: 1000; display: none; align-items: center; justify-content: center;
-        }
-        .modal {
-            background: var(--white); width: 90%; max-width: 800px; max-height: 90vh;
-            border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2); transform: scale(0.9); transition: var(--transition);
-        }
-        .modal.open { transform: scale(1); }
-        .modal-header { padding: 24px; border-bottom: 1px solid var(--gray-light); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
-        .modal-footer { padding: 20px 24px; border-top: 1px solid var(--gray-light); display: flex; justify-content: flex-end; gap: 12px; }
+    .tok {
+      background: var(--green);
+      color: #fff
+    }
 
-        /* ── FORMS ── */
-        .f-group { margin-bottom: 16px; }
-        .f-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--brown); }
-        .f-input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1.5px solid var(--gray-light); font-size: 14px; transition: var(--transition); }
-        .f-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
-        .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .terr {
+      background: var(--red);
+      color: #fff
+    }
 
-        /* ── TABLE STYLES ── */
-        .tbl-wrap { overflow-x: auto; margin-top: 12px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: var(--gray-light); padding: 12px 16px; text-align: left; font-weight: 600; color: var(--gray); }
-        td { border-bottom: 1px solid var(--gray-light); padding: 12px 16px; vertical-align: middle; }
-        tr:hover td { background: var(--cream); }
+    .twarn {
+      background: var(--gold);
+      color: var(--brown)
+    }
 
-        /* ── CUSTOM TASK LIST (Setup & Planning) ── */
-        .task-list { list-style: none; }
-        .task-item { display: grid; grid-template-columns: 30px 1fr 120px 100px 80px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--gray-light); }
-        .task-header { font-weight: 700; color: var(--gold); background: var(--brown); padding: 8px 16px; border-radius: 8px; margin: 16px 0 8px 0; }
-        .check-box { width: 20px; height: 20px; border: 2px solid var(--gold); border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .check-box.checked { background: var(--gold); color: var(--white); }
+    /* NAV */
+    .nav {
+      background: var(--brown);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      border-bottom: 3px solid var(--gold)
+    }
 
-        /* ── UTILS ── */
-        .hidden { display: none !important; }
-        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; }
-        .toast { padding: 14px 24px; border-radius: 12px; background: var(--brown); color: var(--white); font-weight: 600; font-size: 13px; margin-top: 10px; box-shadow: var(--shadow-lg); animation: slideIn 0.3s forwards; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .nav-top {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px
+    }
 
-        /* ── AUDIT HISTORY ── */
-        .history-list { display: flex; flex-direction: column; gap: 12px; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 12px; background: var(--cream); border: 1px solid var(--gray-light); }
-        .score-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
-    </style>
+    .nbrand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      flex-shrink: 0
+    }
+
+    .nlogo {
+      width: 28px;
+      height: 28px;
+      background: var(--gold);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--brown);
+      font-weight: 700
+    }
+
+    .ntitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff
+    }
+
+    .ntitle span {
+      color: var(--gold)
+    }
+
+    .nright {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: auto;
+      flex-wrap: nowrap
+    }
+
+    .nbtn {
+      background: transparent;
+      border: 1.5px solid rgba(255, 255, 255, .25);
+      color: rgba(255, 255, 255, .75);
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: all .2s
+    }
+
+    .nbtn:hover {
+      border-color: var(--gold);
+      color: var(--gold)
+    }
+
+    .nbtn-gold {
+      border-color: rgba(245, 166, 35, .5);
+      color: var(--gold-m)
+    }
+
+    .npl {
+      background: var(--gold);
+      color: var(--brown);
+      border: none;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: all .2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .npl:hover {
+      background: var(--gold-m)
+    }
+
+    .navatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid rgba(255, 255, 255, .25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brown);
+      cursor: pointer;
+      flex-shrink: 0
+    }
+
+    .ntabs {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0 16px;
+      border-top: 1px solid rgba(255, 255, 255, .07);
+      scrollbar-width: none
+    }
+
+    .ntabs::-webkit-scrollbar {
+      display: none
+    }
+
+    .ntab {
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .55);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -3px;
+      white-space: nowrap;
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .ntab:hover {
+      color: rgba(255, 255, 255, .9)
+    }
+
+    .ntab.on {
+      color: var(--gold);
+      border-bottom-color: var(--gold)
+    }
+
+    .sdot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px
+    }
+
+    .sdot.on {
+      background: var(--green);
+      animation: pulse 2s infinite
+    }
+
+    .sdot.off {
+      background: var(--red)
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    /* PAGES */
+    .page {
+      display: none;
+      padding: 18px 18px 80px;
+      max-width: 1400px;
+      margin: 0 auto
+    }
+
+    .page.on {
+      display: block;
+      animation: fi .2s ease
+    }
+
+    @keyframes fi {
+      from {
+        opacity: 0;
+        transform: translateY(5px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .ph {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .pt {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--brown)
+    }
+
+    .ps {
+      font-size: 13px;
+      color: var(--gray);
+      margin-top: 2px
+    }
+
+    .fb {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap
+    }
+
+    /* BUTTONS */
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 13px;
+      border-radius: var(--rs);
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .bp {
+      background: var(--gold);
+      color: var(--brown)
+    }
+
+    .bp:hover {
+      background: var(--gold-m)
+    }
+
+    .bo {
+      background: var(--white);
+      color: var(--brown-m);
+      border: 1.5px solid var(--border)
+    }
+
+    .bo:hover {
+      border-color: var(--gold);
+      color: var(--gold)
+    }
+
+    .bg {
+      background: var(--green);
+      color: #fff
+    }
+
+    .bd {
+      background: var(--red-l);
+      color: var(--red);
+      border: 1.5px solid var(--red)
+    }
+
+    .bd:hover {
+      background: var(--red);
+      color: #fff
+    }
+
+    .bsm {
+      padding: 5px 10px;
+      font-size: 12px
+    }
+
+    .bfull {
+      width: 100%;
+      justify-content: center
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    /* KPI */
+    .kgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 11px;
+      margin-bottom: 16px
+    }
+
+    .kpi {
+      background: var(--white);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      box-shadow: var(--sh)
+    }
+
+    .kl {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--gray);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 6px
+    }
+
+    .kv {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--brown);
+      line-height: 1;
+      margin-bottom: 5px
+    }
+
+    .kc {
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 600
+    }
+
+    .kc.up {
+      background: var(--green-l);
+      color: var(--green)
+    }
+
+    .kc.dn {
+      background: var(--red-l);
+      color: var(--red)
+    }
+
+    .kc.warn {
+      background: var(--gold-l);
+      color: var(--brown-m)
+    }
+
+    .kc.info {
+      background: var(--blue-l);
+      color: var(--blue)
+    }
+
+    /* GRID */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px
+    }
+
+    @media(max-width:860px) {
+
+      .g2,
+      .g3 {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--white);
+      border-radius: var(--r);
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 14px;
+      box-shadow: var(--sh)
+    }
+
+    .ch {
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .ct {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brown)
+    }
+
+    .cb {
+      padding: 14px
+    }
+
+    /* TABLE */
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px
+    }
+
+    .tbl th {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--gray);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      background: var(--gray-l);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap
+    }
+
+    .tbl td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--brown);
+      vertical-align: middle
+    }
+
+    .tbl tr:last-child td {
+      border-bottom: none
+    }
+
+    .tbl tr:hover td {
+      background: var(--gold-l)
+    }
+
+    .tbl-wrap {
+      overflow-x: auto
+    }
+
+    /* BADGES */
+    .bdg {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap
+    }
+
+    .bg2 {
+      background: var(--green-l);
+      color: var(--green)
+    }
+
+    .br2 {
+      background: var(--red-l);
+      color: var(--red)
+    }
+
+    .by2 {
+      background: var(--gold-l);
+      color: var(--brown-m)
+    }
+
+    .bb2 {
+      background: var(--blue-l);
+      color: var(--blue)
+    }
+
+    .bt2 {
+      background: var(--teal-l);
+      color: var(--teal)
+    }
+
+    .bp2 {
+      background: var(--purple-l);
+      color: var(--purple)
+    }
+
+    /* ALERTS */
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 13px;
+      border-radius: var(--rs);
+      margin-bottom: 9px;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .ar {
+      background: var(--red-l);
+      border-left: 3px solid var(--red);
+      color: var(--red)
+    }
+
+    .ay {
+      background: var(--gold-l);
+      border-left: 3px solid var(--gold);
+      color: var(--brown-m)
+    }
+
+    .ag {
+      background: var(--green-l);
+      border-left: 3px solid var(--green);
+      color: var(--green)
+    }
+
+    .ab {
+      background: var(--blue-l);
+      border-left: 3px solid var(--blue);
+      color: var(--blue)
+    }
+
+    /* FORMS */
+    .fg {
+      margin-bottom: 11px
+    }
+
+    .fl {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brown-m);
+      margin-bottom: 4px;
+      letter-spacing: .03em;
+      text-transform: uppercase
+    }
+
+    .fc {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      background: var(--white);
+      color: var(--brown);
+      transition: border-color .15s;
+      outline: none
+    }
+
+    .fc:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245, 166, 35, .08)
+    }
+
+    .fr {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    @media(max-width:580px) {
+      .fr {
+        grid-template-columns: 1fr
+      }
+    }
+
+    textarea.fc {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.6
+    }
+
+    /* PROGRESS */
+    .prog-item {
+      margin-bottom: 12px
+    }
+
+    .prog-hd {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 5px
+    }
+
+    .prog-bg {
+      height: 5px;
+      background: var(--gray-l);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid var(--border)
+    }
+
+    .prog-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .8s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    /* CHECKLIST */
+    .chk-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .1s
+    }
+
+    .chk-item.hidden {
+      display: none
+    }
+
+    .chk-item:last-child {
+      border-bottom: none
+    }
+
+    .chk-item:hover {
+      background: var(--gold-l);
+      margin: 0 -4px;
+      padding: 8px 4px;
+      border-radius: 6px
+    }
+
+    .chk-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all .15s;
+      font-size: 11px
+    }
+
+    .chk-item.done .chk-box {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff
+    }
+
+    .chk-item.done .chk-text {
+      text-decoration: line-through;
+      color: var(--gray)
+    }
+
+    .chk-text {
+      font-size: 13px;
+      line-height: 1.5;
+      flex: 1
+    }
+
+    .chk-sub {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 1px
+    }
+
+    /* AUDIT */
+    .audit-section-hd {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brown-m);
+      padding: 8px 0 4px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      border-top: 1px solid var(--border);
+      margin-top: 6px
+    }
+
+    .audit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .audit-row:last-child {
+      border-bottom: none
+    }
+
+    .audit-name {
+      flex: 1;
+      font-size: 13px
+    }
+
+    .audit-max {
+      font-size: 11px;
+      color: var(--gray);
+      width: 32px;
+      text-align: right
+    }
+
+    .audit-std {
+      font-size: 11px;
+      color: var(--blue);
+      width: 32px;
+      text-align: right
+    }
+
+    .audit-inp {
+      width: 56px;
+      text-align: center;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 4px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      background: var(--white);
+      color: var(--brown);
+      outline: none
+    }
+
+    .audit-inp:focus {
+      border-color: var(--gold)
+    }
+
+    .audit-score-box {
+      background: var(--gray-l);
+      border-radius: var(--r);
+      padding: 16px;
+      text-align: center;
+      margin-top: 12px;
+      border: 1.5px solid var(--border)
+    }
+
+    /* MODAL */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(61, 43, 31, .72);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px
+    }
+
+    .overlay.on {
+      display: flex
+    }
+
+    .modal {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 22px;
+      max-width: 540px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: var(--shm);
+      animation: mIn .2s ease
+    }
+
+    @keyframes mIn {
+      from {
+        transform: scale(.97);
+        opacity: 0
+      }
+
+      to {
+        transform: none;
+        opacity: 1
+      }
+    }
+
+    .modal-lg {
+      max-width: 720px
+    }
+
+    .modal-xl {
+      max-width: 920px
+    }
+
+    .mh {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px
+    }
+
+    .mt {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brown)
+    }
+
+    .mx {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--gray);
+      cursor: pointer;
+      line-height: 1
+    }
+
+    .mx:hover {
+      color: var(--brown)
+    }
+
+    /* MISC */
+    .ptabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 14px;
+      flex-wrap: wrap
+    }
+
+    .ptab {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 20px;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      color: var(--gray);
+      transition: all .2s
+    }
+
+    .ptab.on {
+      background: var(--gold);
+      color: var(--brown);
+      border-color: var(--gold)
+    }
+
+    .sdiv {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 9px 0 5px;
+      border-top: 1px solid var(--border);
+      margin-top: 3px;
+      margin-bottom: 8px
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--gray)
+    }
+
+    .empty-state .ei {
+      font-size: 34px;
+      margin-bottom: 8px
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center
+    }
+
+    .filter-row .fc {
+      width: auto
+    }
+
+    .tl-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .tl-item:last-child {
+      border-bottom: none
+    }
+
+    .tl-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0
+    }
+
+    .tl-txt {
+      font-size: 13px;
+      line-height: 1.5;
+      flex: 1
+    }
+
+    .tl-time {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 1px
+    }
+
+    .store-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .store-item:last-child {
+      border-bottom: none
+    }
+
+    .store-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .store-name {
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1
+    }
+
+    .store-score {
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .setup-card {
+      background: var(--white);
+      border-radius: var(--r);
+      border: 1.5px solid var(--border);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--sh)
+    }
+
+    .ai-box {
+      background: linear-gradient(135deg, var(--brown), var(--brown-m));
+      border-radius: var(--r);
+      padding: 16px;
+      color: #fff;
+      margin-bottom: 14px;
+      box-shadow: var(--shm)
+    }
+
+    .aitag {
+      background: var(--gold);
+      color: var(--brown);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: .06em;
+      display: inline-block;
+      margin-bottom: 7px
+    }
+
+    .ait {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold-m);
+      margin-bottom: 5px
+    }
+
+    .aii {
+      font-size: 13px;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, .9);
+      padding-left: 10px;
+      border-left: 2px solid var(--gold)
+    }
+
+    .ai-msgs {
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 10px;
+      background: var(--gray-l);
+      border-radius: var(--rs);
+      border: 1.5px solid var(--border);
+      margin-bottom: 10px
+    }
+
+    .ai-msg {
+      margin-bottom: 10px
+    }
+
+    .ai-msg-user {
+      text-align: right
+    }
+
+    .ai-bbl {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 88%
+    }
+
+    .ai-msg-user .ai-bbl {
+      background: var(--gold);
+      color: var(--brown);
+      font-weight: 500
+    }
+
+    .ai-msg-ai .ai-bbl {
+      background: var(--brown);
+      color: #fff
+    }
+
+    .ai-input-row {
+      display: flex;
+      gap: 7px
+    }
+
+    .ai-input {
+      flex: 1;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      background: var(--white);
+      color: var(--brown);
+      outline: none
+    }
+
+    .ai-input:focus {
+      border-color: var(--gold)
+    }
+
+    .staff-card {
+      background: var(--white);
+      border-radius: var(--r);
+      border: 1.5px solid var(--border);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color .2s;
+      box-shadow: var(--sh)
+    }
+
+    .staff-card:hover {
+      border-color: var(--gold)
+    }
+
+    .staff-av {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--gold-l);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brown);
+      flex-shrink: 0;
+      overflow: hidden
+    }
+
+    .staff-av img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    code {
+      background: var(--gold-l);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--brown-m);
+      font-size: 11px
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="app-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <div class="logo-box">P</div>
-            <div class="logo-text">Phúc Tea Ops</div>
+  <div class="load" id="loadEl">
+    <div class="spin"></div>
+    <div class="load-msg" id="loadMsg">Đang xử lý...</div>
+  </div>
+  <div class="toast" id="toastEl"></div>
+
+  <!-- ═══ NAV ═══ -->
+  <nav class="nav">
+    <div class="nav-top">
+      <div class="nbrand">
+        <div class="nlogo">⚡</div>
+        <div class="ntitle">Phúc Tea · <span>Ops Center</span></div>
+      </div>
+      <div class="nright">
+        <span style="font-size:11px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:4px">
+          <span class="sdot off" id="sync-dot"></span><span id="sync-text">Chưa kết nối</span>
+        </span>
+        <button class="nbtn" onclick="syncAll()">🔄 Đồng bộ</button>
+        <button class="nbtn nbtn-gold" onclick="openSettings()">⚙️ Cài đặt</button>
+        <a href="https://phuctea-pl.vercel.app" target="_blank" class="npl" id="pl-btn">📊 P&L Hub</a>
+        <div class="navatar" id="nav-avatar" onclick="openModal('modal-profile')" title="Thông tin cá nhân">DL</div>
+      </div>
+    </div>
+    <div class="ntabs">
+      <button class="ntab on" onclick="goPage('dashboard',this)">📊 Dashboard</button>
+      <button class="ntab" onclick="goPage('stores',this)">🏬 Cửa hàng</button>
+      <button class="ntab" onclick="goPage('setup',this)">🏪 Setup & KT</button>
+      <button class="ntab" onclick="goPage('audit',this)">✅ Audit</button>
+      <button class="ntab" onclick="goPage('nhansu',this)">👥 Nhân sự</button>
+      <button class="ntab" onclick="goPage('kehoach',this)">🎯 Kế hoạch</button>
+      <button class="ntab" onclick="goPage('baocao',this)">📋 Báo cáo</button>
+      <button class="ntab" onclick="goPage('ai',this)">🤖 AI</button>
+    </div>
+  </nav>
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="page on" id="pg-dashboard">
+    <div class="ph">
+      <div>
+        <div class="pt" id="greeting">Xin chào 👋</div>
+        <div class="ps" id="today-str"></div>
+      </div>
+      <div class="fb">
+        <button class="btn bo bsm" onclick="syncAll()">🔄 Đồng bộ</button>
+        <a id="sheet-link" href="https://docs.google.com/spreadsheets/d/1tImeHSb1BacVVhJPzQxh2LHffOhqjnX7OVuTrygPJKo"
+          target="_blank" class="btn bo bsm">📊 Mở Sheets</a>
+      </div>
+    </div>
+    <div id="cfg-alert" class="alert ay" style="display:none">
+      ⚙️ <span>Chưa cấu hình Apps Script URL. <button onclick="openSettings()"
+          style="background:none;border:none;color:var(--brown-m);font-weight:700;cursor:pointer;font-size:13px;text-decoration:underline">Cài
+          đặt ngay →</button></span>
+    </div>
+    <div class="kgrid">
+      <div class="kpi">
+        <div class="kl">Cửa hàng hoạt động</div>
+        <div class="kv" id="kpi-stores" style="color:var(--brown)">–</div>
+        <div class="kc up" id="kpi-stores-sub">Từ sheet CuaHang</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Tiến độ mở mới 2026</div>
+        <div class="kv" id="kpi-new">–</div>
+        <div class="kc warn" id="kpi-new-sub">–</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Điểm audit TB</div>
+        <div class="kv" id="kpi-audit" style="color:var(--green)">–</div>
+        <div class="kc up" id="kpi-audit-sub">–</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Cần tái audit</div>
+        <div class="kv" id="kpi-reaudit" style="color:var(--red)">–</div>
+        <div class="kc dn">Dưới 85/100</div>
+      </div>
+    </div>
+    <div id="alerts-container"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">Tiến độ khai trương</span><button class="btn bo bsm"
+            onclick="goPage('setup',document.querySelectorAll('.ntab')[2])">Chi tiết →</button></div>
+        <div class="cb" id="setup-progress-dash">
+          <div class="empty-state">
+            <div class="ei">🏪</div>Đồng bộ để xem
+          </div>
         </div>
-        <ul class="nav-list">
-            <li class="nav-item active" onclick="goTab('dashboard', this)"><i class="icon">📊</i> Tổng quan</li>
-            <li class="nav-item" onclick="goTab('setup', this)"><i class="icon">🏪</i> Setup & KT</li>
-            <li class="nav-item" onclick="goTab('audit', this)"><i class="icon">🔍</i> Audit & QC</li>
-            <li class="nav-item" onclick="goTab('plans', this)"><i class="icon">📅</i> Kế hoạch</li>
-            <li class="nav-item" onclick="goTab('reports', this)"><i class="icon">📈</i> Báo cáo</li>
-            <li class="nav-item" onclick="goTab('stores', this)"><i class="icon">🏙️</i> Cửa hàng</li>
-            <li class="nav-item" onclick="goTab('staff', this)"><i class="icon">👥</i> Nhân sự</li>
-        </ul>
-        <div style="padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px;">
-            <div id="conn-status" class="badge badge-red" style="display: block; text-align: center;">Đang kết nối...</div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Điểm audit cửa hàng</span><button class="btn bo bsm"
+            onclick="goPage('audit',document.querySelectorAll('.ntab')[3])">Chi tiết →</button></div>
+        <div class="cb" id="audit-list-dash">
+          <div class="empty-state">
+            <div class="ei">✅</div>Đồng bộ để xem
+          </div>
         </div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">Hoạt động gần đây</span></div>
+        <div class="cb" id="timeline-dash">
+          <div class="empty-state">
+            <div class="ei">📅</div>Chưa có dữ liệu
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">OKR tháng – Ngân sách</span></div>
+        <div class="cb" id="okr-container">
+          <div id="okr-loading" style="color:var(--gray);font-size:13px">Đồng bộ để xem kế hoạch tháng...</div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-box" id="ai-dash-box">
+      <span class="aitag">✨ AI PHÂN TÍCH</span>
+      <div class="ait">Đang chờ dữ liệu...</div>
+      <div class="aii" style="color:rgba(255,255,255,.5)">Nhấn "Đồng bộ" để tải dữ liệu, sau đó AI phân tích tình hình
+        vận hành.</div>
+      <button class="btn bsm" style="background:var(--gold);color:var(--brown);margin-top:10px"
+        onclick="aiDashInsight()">🤖 Phân tích ngay</button>
+    </div>
+  </div>
+
+  <!-- ═══ STORES ═══ -->
+  <div class="page" id="pg-stores">
+    <div class="ph">
+      <div>
+        <div class="pt">Quản lý Cửa hàng</div>
+        <div class="ps">Tổng hợp tất cả cửa hàng – đồng bộ với sheet CuaHang</div>
+      </div>
+      <div class="fb">
+        <button class="btn bo bsm" onclick="loadStores()">🔄 Tải lại</button>
+        <button class="btn bo bsm" onclick="exportStores()">📥 Xuất Excel</button>
+        <button class="btn bp" onclick="openStoreModal()">+ Thêm cửa hàng</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <select class="fc" id="fs-status" onchange="filterStores()" style="min-width:140px">
+        <option value="all">Tất cả trạng thái</option>
+        <option>Đang hoạt động</option>
+        <option>Đang setup</option>
+        <option>Tạm ngưng</option>
+        <option>Đã đóng cửa</option>
+      </select>
+      <select class="fc" id="fs-brand" onchange="filterStores()" style="min-width:130px">
+        <option value="all">Tất cả thương hiệu</option>
+        <option>Phúc Tea</option>
+        <option>HappiTea</option>
+        <option>The Hoa</option>
+      </select>
+      <select class="fc" id="fs-region" onchange="filterStores()" style="min-width:120px">
+        <option value="all">Tất cả khu vực</option>
+        <option>Miền Nam</option>
+        <option>Miền Bắc</option>
+        <option>Miền Trung</option>
+        <option>Miền Tây</option>
+      </select>
+      <select class="fc" id="fs-model" onchange="filterStores()" style="min-width:130px">
+        <option value="all">Tất cả mô hình</option>
+        <option>Tiêu chuẩn</option>
+        <option>Take away</option>
+        <option>Xe đẩy</option>
+        <option>Next GenZ</option>
+      </select>
+      <select class="fc" id="fs-type" onchange="filterStores()" style="min-width:130px">
+        <option value="all">Tất cả loại</option>
+        <option>Nhượng quyền</option>
+        <option>Trực thuộc</option>
+      </select>
+      <input class="fc" id="fs-search" placeholder="🔍 Tìm kiếm..." style="min-width:160px" oninput="filterStores()">
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Danh sách cửa hàng (<span id="store-count">0</span>)</span></div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Store ID</th>
+              <th>Tên cửa hàng</th>
+              <th>Thương hiệu</th>
+              <th>Chủ / SĐT</th>
+              <th>Mô hình</th>
+              <th>Loại</th>
+              <th>Trạng thái</th>
+              <th>Tiến độ</th>
+              <th>Khai trương</th>
+              <th>Tỉnh/TP</th>
+              <th>Địa chỉ</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="stores-tbody">
+            <tr>
+              <td colspan="12">
+                <div class="empty-state">Đồng bộ để tải dữ liệu</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SETUP ═══ -->
+  <div class="page" id="pg-setup">
+    <div class="ph">
+      <div>
+        <div class="pt">Setup & Khai trương</div>
+        <div class="ps">Theo dõi tiến độ mở cửa hàng mới theo timeline chuẩn – lưu lên Sheets</div>
+      </div>
+      <div class="fb">
+        <button class="btn bo bsm" onclick="loadSetupPage()">🔄 Tải lại</button>
+        <button class="btn bp" onclick="openStoreModal('setup')">+ Thêm cửa hàng setup</button>
+      </div>
+    </div>
+    <div class="kgrid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi">
+        <div class="kl">Đang setup</div>
+        <div class="kv" style="color:var(--gold)" id="setup-cnt">–</div>
+        <div class="kc warn">Đang triển khai</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Khai trương tháng này</div>
+        <div class="kv" style="color:var(--green)" id="kt-cnt">–</div>
+        <div class="kc info" id="kt-plan" style="font-size:10px">Theo kế hoạch quý</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Mục tiêu 2026</div>
+        <div class="kv" style="color:var(--gray)" id="target-2026">30</div>
+        <div class="kc warn" id="target-sub">–</div>
+      </div>
+    </div>
+    <div class="alert ab">💡 <span>Timeline setup được tạo tự động từ sheet <strong>MẪU TIMELINE SETUP</strong>. Mỗi cửa
+        hàng có 1 sheet TL_[StoreID] riêng. Tick xong → Lưu lên Sheets ngay.</span></div>
+    <!-- Filter by phase -->
+    <div class="filter-row">
+      <select class="fc" id="setup-phase-filter" onchange="filterSetupPhase()" style="min-width:180px">
+        <option value="all">Tất cả giai đoạn</option>
+      </select>
+    </div>
+    <div id="setup-stores-list">
+      <div class="empty-state">
+        <div class="ei">🏪</div>Đồng bộ để tải danh sách
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AUDIT ═══ -->
+  <div class="page" id="pg-audit">
+    <div class="ph">
+      <div>
+        <div class="pt">Audit & Kiểm soát chất lượng</div>
+        <div class="ps">Dữ liệu từ Google Form + Form chấm nhanh</div>
+      </div>
+    </div>
+    <div class="ptabs">
+      <button class="ptab on" onclick="showAuditTab('direct',this)">📋 Audit trực tiếp</button>
+      <button class="ptab" onclick="showAuditTab('secret',this)">🕵️ Khách hàng bí ẩn</button>
+      <button class="ptab" onclick="showAuditTab('quick',this)">✍️ Chấm nhanh</button>
+      <button class="ptab" onclick="showAuditTab('report',this)">📊 Biên bản</button>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <div class="welcome">
-                <h1 id="page-title">Hệ thống vận hành</h1>
-                <p id="today-str">Đang tải dữ liệu...</p>
-            </div>
-            <div class="top-actions">
-                <button class="btn btn-outline" onclick="syncAll()">🔄 Đồng bộ</button>
-                <button class="btn btn-gold" onclick="openConfig()">⚙️ Cài đặt</button>
-            </div>
+    <!-- Direct -->
+    <div id="tab-direct">
+      <div id="audit-alerts-container"></div>
+      <div class="kgrid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi">
+          <div class="kl">Điểm TB hệ thống</div>
+          <div class="kv" id="audit-avg" style="color:var(--green)">–</div>
+          <div class="kc up" id="audit-avg-sub">Mục tiêu ≥85</div>
         </div>
-
-        <!-- Dashboard Tab -->
-        <div id="tab-dashboard" class="tab-content">
-            <div class="grid-kpi">
-                <div class="kpi-card">
-                    <span class="kpi-label">CH Đang hoạt động</span>
-                    <span id="kpi-stores" class="kpi-val">...</span>
-                    <span class="kpi-trend up">↑ 2 CH tháng này</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Tiến độ mục tiêu 2026</span>
-                    <span id="kpi-prog-pct" class="kpi-val">...%</span>
-                    <div class="prog-container"><div id="kpi-prog-bar" class="prog-bar" style="background:var(--gold); width: 0%"></div></div>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Điểm Audit hệ thống</span>
-                    <span id="kpi-audit" class="kpi-val">...</span>
-                    <span id="kpi-audit-status" class="badge badge-green" style="width:fit-content">Xuất sắc</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">CH Cần tái Audit</span>
-                    <span id="kpi-reaudit" class="kpi-val" style="color:var(--red)">...</span>
-                    <span class="kpi-trend" style="color:var(--gray)">Dưới 85 điểm</span>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-                <div class="card">
-                    <div class="section-title">🕒 Hoạt động gần đây</div>
-                    <div class="tbl-wrap">
-                        <table id="timeline-table">
-                            <thead><tr><th>Thời gian</th><th>Sự kiện</th><th>Trạng thái</th></tr></thead>
-                            <tbody id="timeline-body"><tr><td colspan="3" style="text-align:center">Đang tải...</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card" style="background: var(--brown); color: var(--white);">
-                    <div class="section-title" style="color: var(--gold);">🤖 AI Insight</div>
-                    <p id="ai-insight" style="font-size: 14px; opacity: 0.9;">Hệ thống đang phân tích các chỉ số...</p>
-                    <button class="btn btn-gold" style="margin-top: 20px; width: 100%; justify-content: center;" onclick="askAI()">✨ Tư vấn vận hành</button>
-                </div>
-            </div>
+        <div class="kpi">
+          <div class="kl">Lượt audit tháng này</div>
+          <div class="kv" id="audit-done">–</div>
         </div>
-
-        <!-- Setup & KT Tab -->
-        <div id="tab-setup" class="tab-content hidden">
-            <div class="setup-filters">
-                <select class="filter-select" id="setup-store-filter" onchange="renderSetupGrid()">
-                    <option value="all">Tất cả cửa hàng setup</option>
-                </select>
-                <select class="filter-select" id="setup-phase-filter" onchange="renderSetupGrid()">
-                    <option value="all">Tất cả các giai đoạn</option>
-                </select>
-                <div style="flex: 1"></div>
-                <button class="btn btn-primary" onclick="openNewStoreModal()">+ Thêm cửa hàng mới</button>
-            </div>
-            <div class="setup-grid" id="setup-grid">
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px;">Đang tải danh sách setup...</div>
-            </div>
+        <div class="kpi">
+          <div class="kl">Cần tái audit</div>
+          <div class="kv" style="color:var(--red)" id="audit-reaudit-cnt">–</div>
+          <div class="kc dn">Deadline 15 ngày</div>
         </div>
-
-        <!-- Audit Tab -->
-        <div id="tab-audit" class="tab-content hidden">
-            <div class="card">
-                <div class="section-title">📊 Kết quả Audit</div>
-                <div class="setup-filters">
-                    <button class="btn btn-gold" onclick="openAuditForm()">📝 Chấm Audit mới</button>
-                    <button class="btn btn-outline" onclick="exportAudit()">📥 Xuất Excel</button>
-                </div>
-                <div class="tbl-wrap">
-                    <table id="audit-table">
-                        <thead><tr><th>Cửa hàng</th><th>Ngày gần nhất</th><th>Kết quả</th><th>Hạng</th><th>Hành động</th></tr></thead>
-                        <tbody id="audit-body"></tbody>
-                    </table>
-                </div>
-            </div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <span class="ct">Kết quả từ Google Form Audit Trực tiếp</span>
+          <div class="fb">
+            <a href="https://forms.gle/LyuYTxVaaoQTqy5C7" target="_blank" class="btn bp bsm">🔗 Mở Form Audit TT</a>
+            <button class="btn bo bsm" onclick="loadAuditData()">🔄 Làm mới</button>
+            <button class="btn bo bsm" onclick="exportAuditData()">📥 Xuất Excel</button>
+          </div>
         </div>
-
-        <!-- Plans Tab -->
-        <div id="tab-plans" class="tab-content hidden">
-            <div class="card">
-                <div class="section-title">📅 Kế hoạch Vận hành</div>
-                <div class="setup-filters">
-                    <button class="btn btn-primary" onclick="openPlanModal()">+ Lập kế hoạch mới</button>
-                </div>
-                <div class="tbl-wrap">
-                    <table id="plans-table">
-                        <thead><tr><th>Tháng/Kỳ</th><th>Tiêu đề</th><th>CH MT</th><th>Audit MT</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-                        <tbody id="plans-body"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Cửa hàng</th>
+                <th>Điểm</th>
+                <th>Ngày</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="audit-body-direct">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state" style="padding:16px">Nhấn "Làm mới" để tải</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <!-- Reports Tab -->
-        <div id="tab-reports" class="tab-content hidden">
-            <div class="card">
-                <div class="section-title">📈 Báo cáo định kỳ</div>
-                <div class="setup-filters">
-                    <button class="btn btn-primary" onclick="openReportModal()">📝 Tạo báo cáo tháng</button>
-                </div>
-                <div class="tbl-wrap">
-                    <table id="reports-table">
-                        <thead><tr><th>Tháng</th><th>Khai trương</th><th>Audit TB</th><th>Ngân sách</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead>
-                        <tbody id="reports-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Other placeholders -->
-        <div id="tab-stores" class="tab-content hidden"><div class="card">Dữ liệu cửa hàng đang được xây dựng...</div></div>
-        <div id="tab-staff" class="tab-content hidden"><div class="card">Dữ liệu nhân sự đang được xây dựng...</div></div>
+      </div>
     </div>
-</div>
 
-<!-- ── MODALS ── -->
-
-<!-- Setup / Timeline Detail Modal -->
-<div class="modal-overlay" id="modal-timeline">
-    <div class="modal" style="max-width: 950px;">
-        <div class="modal-header">
-            <h2 id="tl-title">Chi tiết Timeline</h2>
-            <button class="btn btn-outline" onclick="closeModal('modal-timeline')">✕</button>
+    <!-- Secret -->
+    <div id="tab-secret" style="display:none">
+      <div class="card">
+        <div class="ch">
+          <span class="ct">Kết quả Audit Khách hàng bí ẩn</span>
+          <div class="fb">
+            <a href="https://forms.gle/4o36fdUQ4BNvjpCP8" target="_blank" class="btn bp bsm">🔗 Mở Form Bí ẩn</a>
+            <button class="btn bo bsm" onclick="loadSecretAudit()">🔄 Tải mới nhất</button>
+          </div>
         </div>
-        <div class="modal-body">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
-                <div>
-                    <h3 id="tl-store-name" style="margin-bottom: 4px;">–</h3>
-                    <p id="tl-meta" style="font-size: 13px; color: var(--gray);">–</p>
-                </div>
-                <div style="text-align: right;">
-                    <div id="tl-prog-text" style="font-size: 18px; font-weight: 800; color: var(--gold);">0%</div>
-                    <div class="prog-container" style="width: 150px;"><div id="tl-prog-bar" class="prog-bar" style="background:var(--gold); width: 0%"></div></div>
-                </div>
-            </div>
-            <div class="tbl-wrap" style="max-height: 50vh;">
-                <table>
-                    <thead><tr><th style="width: 40px"></th><th>Công việc</th><th>Ngày bắt đầu</th><th>Deadline</th><th>Phụ trách</th><th>Kết quả/Ghi chú</th></tr></thead>
-                    <tbody id="tl-task-body"></tbody>
-                </table>
-            </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Cửa hàng</th>
+                <th>Điểm</th>
+                <th>Nhận xét</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="audit-body-secret">
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state" style="padding:16px">Nhấn "Tải mới nhất"</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="saveTimeline()">💾 Lưu tiến độ</button>
-            <button class="btn btn-primary" onclick="closeModal('modal-timeline')">Đóng</button>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">AI phân tích xu hướng bí ẩn</span></div>
+        <div class="cb">
+          <button class="btn bp bfull" onclick="aiSecretAnalysis()">🤖 AI phân tích kết quả KHBM</button>
+          <div id="secret-ai" style="margin-top:12px;font-size:13px;color:var(--gray)">Nhấn để AI phân tích...</div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Audit Form Modal -->
-<div class="modal-overlay" id="modal-audit">
-    <div class="modal" style="max-width: 1000px;">
-        <div class="modal-header">
-            <h2>📝 Chấm Audit Cửa hàng</h2>
-            <button class="btn btn-outline" onclick="closeModal('modal-audit')">✕</button>
-        </div>
-        <div class="modal-body" id="audit-form-body">
-            <div class="f-grid">
-                <div class="f-group">
-                    <label class="f-label">Cửa hàng</label>
-                    <select class="f-input" id="aud-store-select"></select>
-                </div>
-                <div class="f-group">
-                    <label class="f-label">Loại Audit</label>
-                    <select class="f-input" id="aud-type">
-                        <option>Audit trực tiếp</option>
-                        <option>Khách hàng bí ẩn</option>
-                        <option>Kiểm tra định kỳ</option>
-                    </select>
-                </div>
+    <!-- Quick form -->
+    <div id="tab-quick" style="display:none">
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><span class="ct">Form Audit Nhanh</span></div>
+          <div class="cb">
+            <div class="fg"><label class="fl">Cửa hàng</label><select class="fc" id="audit-store">
+                <option value="">-- Chọn cửa hàng --</option>
+              </select></div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Ngày audit</label><input type="date" class="fc" id="audit-date"></div>
+              <div class="fg"><label class="fl">Loại</label><select class="fc" id="audit-type">
+                  <option>Audit trực tiếp</option>
+                  <option>Tái audit</option>
+                  <option>Audit định kỳ</option>
+                </select></div>
             </div>
-            <div id="criteria-container"></div>
-            <div class="f-group" style="margin-top: 20px;">
-                <label class="f-label">Ghi chú & Action Plan (Nếu < 85đ)</label>
-                <textarea class="f-input" id="aud-note" rows="3" placeholder="Nhập hành động khắc phục..."></textarea>
+            <div class="sdiv">Tiêu chí chấm điểm</div>
+            <div id="audit-criteria-container">
+              <div class="empty-state" style="padding:16px">Đang tải tiêu chí...</div>
             </div>
+            <div class="audit-score-box">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:2px">TỔNG ĐIỂM</div>
+              <div id="audit-total" style="font-size:40px;font-weight:700;color:var(--green)">0</div>
+              <div id="audit-status" style="font-size:12px;margin-top:3px;color:var(--green)">Chưa chấm</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px">Điểm chuẩn: <span id="audit-std-total"
+                  style="color:var(--blue)">–</span> · Tối đa: <span id="audit-max-total"
+                  style="color:var(--gray)">–</span></div>
+            </div>
+            <div class="fg" style="margin-top:12px"><label class="fl">Action Plan (48h)</label><textarea class="fc"
+                id="action-plan" rows="3" placeholder="Các hành động cần thực hiện..."></textarea></div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button class="btn bp" style="flex:1" onclick="saveAudit()">💾 Lưu lên Sheets</button>
+              <button class="btn bo" onclick="aiAuditAdvice()">🤖 AI đề xuất AP</button>
+            </div>
+          </div>
         </div>
-        <div class="modal-footer">
-            <div style="flex: 1; font-weight: 700; font-size: 18px;">Tổng điểm: <span id="aud-total-score">0</span>/100</div>
-            <button class="btn btn-outline" onclick="closeModal('modal-audit')">Hủy</button>
-            <button class="btn btn-gold" onclick="submitAudit()">🚀 Gửi kết quả</button>
+        <div class="card">
+          <div class="ch"><span class="ct">Thang điểm & Hướng dẫn</span></div>
+          <div class="cb">
+            <div class="alert ab" style="margin-bottom:10px">📋 <span>Điểm <strong>≥85/100: Đạt</strong>. 70–84: Theo
+                dõi. Dưới 70: Khẩn. Tái audit trong 15 ngày.</span></div>
+            <div id="audit-guide">
+              <div class="empty-state">Đang tải...</div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Audit History Modal -->
-<div class="modal-overlay" id="modal-audit-history">
+    <!-- Report -->
+    <div id="tab-report" style="display:none">
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><span class="ct">Tạo biên bản audit</span></div>
+          <div class="cb">
+            <div class="fg"><label class="fl">Cửa hàng</label><select class="fc" id="rpt-audit-store">
+                <option value="">-- Chọn cửa hàng --</option>
+              </select></div>
+            <div class="fg"><label class="fl">Loại</label><select class="fc" id="rpt-audit-type">
+                <option>Audit trực tiếp</option>
+                <option>Audit bí ẩn</option>
+                <option>Tổng hợp</option>
+              </select></div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button class="btn bp" onclick="genAuditReport()">📋 Tạo biên bản</button>
+              <button class="btn bo" onclick="aiGenAuditReport()">🤖 AI soạn</button>
+              <button class="btn bo bsm" onclick="exportAuditReport()">📥 Xuất Excel</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct">Biên bản</span>
+            <div class="fb">
+              <button class="btn bo bsm" id="btn-copy-audit" style="display:none" onclick="copyText(auditReportText)">📋
+                Copy</button>
+              <button class="btn bp bsm" id="btn-send-audit" style="display:none" onclick="openAuditEmailModal()">✉️ Gửi
+                CH</button>
+            </div>
+          </div>
+          <div class="cb">
+            <pre id="audit-report-pre"
+              style="font-size:12px;line-height:1.8;color:var(--brown);white-space:pre-wrap;max-height:420px;overflow-y:auto;background:var(--gray-l);border-radius:var(--rs);padding:12px">← Chọn cửa hàng và tạo biên bản.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ NHÂN SỰ ═══ -->
+  <div class="page" id="pg-nhansu">
+    <div class="ph">
+      <div>
+        <div class="pt">Nhân sự Vận hành</div>
+        <div class="ps">Nhân sự nội bộ hệ thống – đồng bộ sheet NhanSu</div>
+      </div>
+      <div class="fb">
+        <button class="btn bo bsm" onclick="loadStaff()">🔄 Tải lại</button>
+        <button class="btn bp" onclick="openStaffModal()">+ Thêm nhân viên</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <select class="fc" id="fns-position" onchange="filterStaff()" style="min-width:140px">
+        <option value="all">Tất cả chức danh</option>
+      </select>
+      <select class="fc" id="fns-store" onchange="filterStaff()" style="min-width:140px">
+        <option value="all">Tất cả cửa hàng</option>
+      </select>
+      <select class="fc" id="fns-role" onchange="filterStaff()" style="min-width:130px">
+        <option value="all">Tất cả phân quyền</option>
+        <option>System</option>
+        <option>Admin</option>
+        <option>User</option>
+      </select>
+      <select class="fc" id="fns-status" onchange="filterStaff()" style="min-width:140px">
+        <option value="Đang cộng tác">Đang cộng tác</option>
+        <option value="Tạm ngưng">Tạm ngưng</option>
+        <option value="Đã ngưng cộng tác">Đã ngưng</option>
+        <option value="all">Tất cả</option>
+      </select>
+      <input class="fc" id="fns-search" placeholder="🔍 Tìm kiếm..." style="min-width:150px" oninput="filterStaff()">
+    </div>
+    <div id="staff-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+    <!-- Training -->
+    <div class="card" style="margin-top:16px">
+      <div class="ch"><span class="ct">Phát triển nhân sự tháng này</span><span id="training-month-label"
+          style="font-size:12px;color:var(--gray)"></span></div>
+      <div class="cb" id="training-section">
+        <div class="empty-state">Đồng bộ để xem kế hoạch đào tạo</div>
+      </div>
+    </div>
+    <!-- Pending -->
+    <div id="pending-section" style="display:none">
+      <div class="sdiv" style="margin-top:18px">Chờ xét duyệt</div>
+      <div id="pending-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ KẾ HOẠCH ═══ -->
+  <div class="page" id="pg-kehoach">
+    <div class="ph">
+      <div>
+        <div class="pt">Kế hoạch Tháng</div>
+        <div class="ps">AI phân tích & đề xuất kế hoạch – lưu + gửi BOD</div>
+      </div>
+      <div class="fb">
+        <select class="fc" id="plan-history-sel" style="min-width:180px" onchange="loadPlanById(this.value)">
+          <option value="">-- Xem kế hoạch cũ --</option>
+        </select>
+        <button class="btn bp" onclick="aiGenPlan()">🤖 AI Lập kế hoạch</button>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">Soạn kế hoạch</span></div>
+        <div class="cb">
+          <div class="fr">
+            <div class="fg"><label class="fl">Tháng kế hoạch *</label><input class="fc" id="plan-month"
+                placeholder="Tháng 5/2026"></div>
+            <div class="fg"><label class="fl">Tiêu đề</label><input class="fc" id="plan-title"
+                placeholder="Kế hoạch tháng 5/2026"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Mục tiêu cửa hàng mới</label><input class="fc" type="number"
+                id="plan-target-stores" value="2" min="0"></div>
+            <div class="fg"><label class="fl">Điểm audit mục tiêu</label><input class="fc" type="number"
+                id="plan-target-audit" value="85" min="0" max="100"></div>
+          </div>
+          <div class="fg"><label class="fl">Ngân sách dự kiến (triệu đồng)</label><input class="fc" type="number"
+              id="plan-budget" value="0" step="0.1"></div>
+          <div class="fg"><label class="fl">Nội dung kế hoạch</label><textarea class="fc" id="plan-content" rows="6"
+              placeholder="AI sẽ phân tích và đề xuất. Bạn có thể chỉnh sửa trước khi lưu..."></textarea></div>
+          <div class="fg"><label class="fl">Ghi chú</label><textarea class="fc" id="plan-note" rows="2"></textarea>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn bp" onclick="savePlan()">💾 Lưu kế hoạch</button>
+            <button class="btn bo" onclick="openEmailModal('plan')">✉️ Gửi BOD</button>
+            <button class="btn bo bsm" onclick="exportPlan()">📥 Xuất Excel</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Xem trước</span><span id="plan-id-label"
+            style="font-size:11px;color:var(--gray)"></span></div>
+        <div class="cb">
+          <pre id="plan-preview"
+            style="font-size:12px;line-height:1.8;color:var(--gray);min-height:200px;white-space:pre-wrap">← AI sẽ phân tích kế hoạch tháng trước và đề xuất kế hoạch mới</pre>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Lịch sử kế hoạch</span></div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Tháng</th>
+              <th>CH mục tiêu</th>
+              <th>Audit MT</th>
+              <th>Ngân sách</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="plan-history-body">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state" style="padding:16px">Đồng bộ để xem</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BÁO CÁO ═══ -->
+  <div class="page" id="pg-baocao">
+    <div class="ph">
+      <div>
+        <div class="pt">Báo cáo kết quả</div>
+        <div class="ps">So sánh thực tế vs kế hoạch – lưu + gửi BOD</div>
+      </div>
+      <div class="fb">
+        <select class="fc" id="report-history-sel" style="min-width:180px" onchange="loadReportById(this.value)">
+          <option value="">-- Xem báo cáo cũ --</option>
+        </select>
+        <button class="btn bp" onclick="aiGenReport()">🤖 AI soạn báo cáo</button>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">Thông tin báo cáo</span></div>
+        <div class="cb">
+          <div class="fr">
+            <div class="fg"><label class="fl">Tháng báo cáo *</label><input class="fc" id="rpt-month"
+                placeholder="Tháng 4/2026"></div>
+            <div class="fg"><label class="fl">So sánh với kế hoạch</label><select class="fc" id="rpt-plan-ref">
+                <option value="">-- Không so sánh --</option>
+              </select></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Cửa hàng khai trương TT</label><input class="fc" type="number"
+                id="rpt-actual-stores" value="0" min="0"></div>
+            <div class="fg"><label class="fl">Điểm audit TB TT</label><input class="fc" type="number"
+                id="rpt-actual-audit" min="0" max="100"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Ngân sách đã dùng (tr)</label><input class="fc" type="number"
+                id="rpt-budget-used" value="0" step="0.1"></div>
+            <div class="fg"><label class="fl">Lượt audit TT</label><input class="fc" type="number" id="rpt-audit-cnt"
+                value="0" min="0"></div>
+          </div>
+          <div class="fg"><label class="fl">Thành tựu nổi bật</label><textarea class="fc" id="rpt-highlight" rows="3"
+              placeholder="Nhập thành tựu..."></textarea></div>
+          <div class="fg"><label class="fl">Thách thức & kế hoạch tiếp theo</label><textarea class="fc"
+              id="rpt-challenge" rows="3" placeholder="Nhập thách thức..."></textarea></div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn bp" onclick="genReport()">📝 Tạo báo cáo</button>
+            <button class="btn bo" onclick="openEmailModal('report')">✉️ Gửi BOD</button>
+            <button class="btn bo bsm" onclick="exportReport()">📥 Xuất Excel</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Xem trước báo cáo</span>
+          <button class="btn bo bsm" id="btn-copy-rpt" style="display:none" onclick="copyText(reportText)">📋
+            Copy</button>
+        </div>
+        <div class="cb">
+          <pre id="report-preview"
+            style="font-size:12px;line-height:1.8;color:var(--gray);min-height:200px;white-space:pre-wrap">← Điền thông tin và tạo báo cáo</pre>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Lịch sử báo cáo</span></div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Tháng</th>
+              <th>CH khai trương TT</th>
+              <th>Điểm audit TT</th>
+              <th>Ngân sách dùng</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="report-history-body">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state" style="padding:16px">Đồng bộ để xem</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AI ═══ -->
+  <div class="page" id="pg-ai">
+    <div class="ph">
+      <div>
+        <div class="pt">🤖 AI Phân tích Operations</div>
+        <div class="ps">Trợ lý AI riêng cho Operations Phúc Tea</div>
+      </div>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="ai-box" id="ai-main-box">
+          <span class="aitag">✨ AI PHÂN TÍCH</span>
+          <div class="ait">Chờ dữ liệu...</div>
+          <div class="aii" style="color:rgba(255,255,255,.5)">Đồng bộ → AI phân tích toàn hệ thống.</div>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+          <button class="btn bp" onclick="aiFullAnalysis()">🤖 Phân tích toàn hệ thống</button>
+          <button class="btn bo" onclick="aiDashInsight()">📊 Tóm tắt dashboard</button>
+          <button class="btn bo" onclick="aiSuggestPlan()">🎯 Gợi ý kế hoạch</button>
+        </div>
+        <div id="ai-suggestions"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">💬 Hỏi AI về vận hành</span></div>
+        <div class="cb">
+          <div class="ai-msgs" id="ai-messages">
+            <div class="ai-msg ai-msg-ai">
+              <div class="ai-bbl">Xin chào! Tôi là AI assistant Operations Phúc Tea. Hỏi tôi về audit, setup, khai
+                trương, nhân sự...</div>
+            </div>
+          </div>
+          <div class="ai-input-row">
+            <input class="ai-input" id="ai-q" placeholder="Hỏi về vận hành..."
+              onkeydown="if(event.key==='Enter')askAI()">
+            <button class="btn bp" onclick="askAI()">Gửi</button>
+          </div>
+          <div style="margin-top:9px;display:flex;gap:5px;flex-wrap:wrap">
+            <button class="btn bo bsm" onclick="quickAsk('Tóm tắt audit tháng này')">📊 Audit</button>
+            <button class="btn bo bsm" onclick="quickAsk('Cửa hàng nào cần tái audit gấp?')">⚠️ Tái audit</button>
+            <button class="btn bo bsm" onclick="quickAsk('5 việc ưu tiên tuần này')">📋 To-do</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODALS ═══ -->
+
+  <!-- Settings -->
+  <div class="overlay" id="modal-settings">
     <div class="modal">
-        <div class="modal-header">
-            <h2 id="hist-title">Lịch sử Audit</h2>
-            <button class="btn btn-outline" onclick="closeModal('modal-audit-history')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="history-list" id="audit-history-list"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" onclick="closeModal('modal-audit-history')">Đóng</button>
-        </div>
+      <div class="mh">
+        <div class="mt">⚙️ Cài đặt kết nối</div><button class="mx" onclick="closeModal('modal-settings')">×</button>
+      </div>
+      <div class="fg"><label class="fl">Apps Script URL *</label><input class="fc" id="cfg-url"
+          placeholder="https://script.google.com/macros/s/..."></div>
+      <div class="fg"><label class="fl">Google Sheet ID</label><input class="fc" id="cfg-sheet"
+          value="1tImeHSb1BacVVhJPzQxh2LHffOhqjnX7OVuTrygPJKo"></div>
+      <div class="fg"><label class="fl">Anthropic API Key (AI trực tiếp)</label><input class="fc" type="password"
+          id="cfg-key" placeholder="sk-ant-..."></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn bp" style="flex:1" onclick="saveSettings()">✅ Lưu & Đồng bộ</button>
+        <button class="btn bo" onclick="closeModal('modal-settings')">Đóng</button>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Plan Form Modal -->
-<div class="modal-overlay" id="modal-plan">
+  <!-- Store Modal -->
+  <div class="overlay" id="modal-store">
+    <div class="modal modal-lg">
+      <div class="mh">
+        <div class="mt" id="store-modal-title">+ Thêm cửa hàng</div><button class="mx"
+          onclick="closeModal('modal-store')">×</button>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Store ID (tự động nếu trống)</label><input class="fc" id="ns-id"
+            placeholder="CH001"></div>
+        <div class="fg"><label class="fl">Tên cửa hàng</label><input class="fc" id="ns-name"
+            placeholder="Phúc Tea – Ô Môn"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Thương hiệu</label><select class="fc" id="ns-brand">
+            <option>Phúc Tea</option>
+            <option>HappiTea</option>
+            <option>The Hoa</option>
+          </select></div>
+        <div class="fg"><label class="fl">Mô hình</label><select class="fc" id="ns-model">
+            <option>Tiêu chuẩn</option>
+            <option>Take away</option>
+            <option>Xe đẩy</option>
+            <option>Next GenZ</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Loại cửa hàng</label><select class="fc" id="ns-type">
+            <option>Nhượng quyền</option>
+            <option>Trực thuộc</option>
+          </select></div>
+        <div class="fg"><label class="fl">Trạng thái</label><select class="fc" id="ns-status"
+            onchange="toggleSetupExtra(this.value)">
+            <option>Đang setup</option>
+            <option>Đang hoạt động</option>
+            <option>Tạm ngưng</option>
+            <option>Đã đóng cửa</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Chủ chi nhánh</label><input class="fc" id="ns-owner"
+            placeholder="Nguyễn Văn A"></div>
+        <div class="fg"><label class="fl">SĐT</label><input class="fc" id="ns-phone" placeholder="0xxx"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Email chủ</label><input class="fc" id="ns-email" placeholder="email@"></div>
+        <div class="fg"><label class="fl">Ngày sinh chủ</label><input class="fc" type="date" id="ns-dob"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">STT chi nhánh</label><input class="fc" id="ns-storeNo" placeholder="1"></div>
+        <div class="fg"><label class="fl">Tỉnh/Thành</label><input class="fc" id="ns-province" placeholder="Cần Thơ">
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Khu vực</label><select class="fc" id="ns-region">
+            <option>Miền Tây</option>
+            <option>Miền Nam</option>
+            <option>Miền Trung</option>
+            <option>Miền Bắc</option>
+          </select></div>
+        <div class="fg"><label class="fl">Tọa độ (lat,lng)</label><input class="fc" id="ns-coords"
+            placeholder="10.0,105.7"></div>
+      </div>
+      <div class="fg"><label class="fl">Địa chỉ</label><input class="fc" id="ns-addr"></div>
+      <div id="ns-setup-extra">
+        <div class="sdiv">Thông tin Setup</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Ngày bắt đầu setup</label><input class="fc" type="date" id="ns-setup-start">
+          </div>
+          <div class="fg"><label class="fl">Dự kiến khai trương</label><input class="fc" type="date" id="ns-launch">
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Ghi chú</label><textarea class="fc" id="ns-note" rows="2"></textarea></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn bp" style="flex:1" onclick="saveStoreForm()">💾 Lưu cửa hàng</button>
+        <button class="btn bo" onclick="closeModal('modal-store')">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff Modal -->
+  <div class="overlay" id="modal-staff">
+    <div class="modal modal-lg">
+      <div class="mh">
+        <div class="mt" id="staff-modal-title">+ Thêm nhân viên</div><button class="mx"
+          onclick="closeModal('modal-staff')">×</button>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">ID nhân viên</label><input class="fc" id="sf-id"
+            placeholder="NSHT000_xx (tự động)"></div>
+        <div class="fg"><label class="fl">Họ và tên *</label><input class="fc" id="sf-name" placeholder="Nguyễn Văn A">
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">SĐT</label><input class="fc" id="sf-phone" placeholder="0xxx"></div>
+        <div class="fg"><label class="fl">Email *</label><input class="fc" type="email" id="sf-email"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Giới tính</label><select class="fc" id="sf-gender">
+            <option>Nam</option>
+            <option>Nữ</option>
+          </select></div>
+        <div class="fg"><label class="fl">Ngày sinh</label><input class="fc" type="date" id="sf-dob"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fc" type="date" id="sf-start"></div>
+        <div class="fg"><label class="fl">Chức danh</label><input class="fc" id="sf-position"
+            placeholder="Operations Staff"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Cửa hàng</label><input class="fc" id="sf-store" value="Hệ Thống"></div>
+        <div class="fg"><label class="fl">Phân quyền</label><select class="fc" id="sf-role">
+            <option>User</option>
+            <option>Admin</option>
+            <option>System</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Trạng thái</label><select class="fc" id="sf-status">
+            <option>Đang cộng tác</option>
+            <option>Tạm ngưng</option>
+            <option>Đã ngưng cộng tác</option>
+          </select></div>
+        <div class="fg"><label class="fl">Mật khẩu</label><input class="fc" type="password" id="sf-pw"
+            placeholder="Mật khẩu đăng nhập"></div>
+      </div>
+      <div class="fg"><label class="fl">Ghi chú</label><textarea class="fc" id="sf-note" rows="2"></textarea></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn bp" style="flex:1" onclick="saveStaffForm()">💾 Lưu lên Sheets</button>
+        <button class="btn bo" onclick="closeModal('modal-staff')">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="overlay" id="modal-profile">
     <div class="modal">
-        <div class="modal-header">
-            <h2>📅 Lập kế hoạch mới</h2>
-            <button class="btn btn-outline" onclick="closeModal('modal-plan')">✕</button>
+      <div class="mh">
+        <div class="mt">👤 Thông tin cá nhân</div><button class="mx" onclick="closeModal('modal-profile')">×</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div class="staff-av" style="width:52px;height:52px;font-size:18px" id="profile-av">DL</div>
+        <div>
+          <div style="font-weight:700;font-size:15px" id="profile-name">Dương Thanh Liêm</div>
+          <div style="font-size:12px;color:var(--gray)" id="profile-email">duongthanhliem@phuctea.com.vn</div>
+          <div style="margin-top:4px"><span class="bdg bb2" id="profile-role">System</span></div>
         </div>
-        <div class="modal-body">
-            <div class="f-grid">
-                <div class="f-group">
-                    <label class="f-label">Tháng/Kỳ</label>
-                    <input type="text" class="f-input" id="pl-month" placeholder="Tháng 04/2026">
-                </div>
-                <div class="f-group">
-                    <label class="f-label">Tiêu đề</label>
-                    <input type="text" class="f-input" id="pl-title" placeholder="Kế hoạch vận hành quý II">
-                </div>
-            </div>
-            <div class="f-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-                <div class="f-group">
-                    <label class="f-label">Mục tiêu CH mới</label>
-                    <input type="number" class="f-input" id="pl-target-ch" value="3">
-                </div>
-                <div class="f-group">
-                    <label class="f-label">Mục tiêu Audit TB</label>
-                    <input type="number" class="f-input" id="pl-target-aud" value="85">
-                </div>
-                <div class="f-group">
-                    <label class="f-label">Ngân sách (trđ)</label>
-                    <input type="number" class="f-input" id="pl-budget" value="0">
-                </div>
-            </div>
-            <div class="section-title">✨ Công việc trọng tâm</div>
-            <div id="plan-tasks-container"></div>
-            <button class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="addPlanTaskRow()">+ Thêm đầu việc</button>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Chức danh</label><input class="fc" id="p-position" value="Operations Leader"
+            readonly></div>
+        <div class="fg"><label class="fl">Cửa hàng</label><input class="fc" id="p-store" value="Hệ Thống" readonly>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal('modal-plan')">Hủy</button>
-            <button class="btn btn-primary" onclick="savePlan()">💾 Lưu kế hoạch</button>
-        </div>
+      </div>
+      <div class="fg"><label class="fl">SĐT</label><input class="fc" id="p-phone" value="0357636539"></div>
+      <div class="sdiv">Đổi mật khẩu</div>
+      <div class="fg"><label class="fl">Mật khẩu mới</label><input class="fc" type="password" id="p-newpw"
+          placeholder="••••••••"></div>
+      <button class="btn bp bfull" onclick="updateProfile()">💾 Cập nhật</button>
     </div>
-</div>
+  </div>
 
-<div id="toast-container"></div>
-
-<!-- Settings Modal -->
-<div class="modal-overlay" id="modal-config">
-    <div class="modal" style="max-width: 500px">
-        <div class="modal-header">
-            <h2>⚙️ Cài đặt hệ thống</h2>
-            <button class="btn btn-outline" onclick="closeModal('modal-config')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="f-group">
-                <label class="f-label">Apps Script URL</label>
-                <input type="text" class="f-input" id="cfg-url" placeholder="https://script.google.com/macros/s/...">
-            </div>
-            <div class="f-group">
-                <label class="f-label">Mục tiêu 2026 (số CH)</label>
-                <input type="number" class="f-input" id="cfg-target" value="30">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary" onclick="saveConfig()">Lưu cài đặt</button>
-        </div>
+  <!-- Email Modal -->
+  <div class="overlay" id="modal-email">
+    <div class="modal modal-lg">
+      <div class="mh">
+        <div class="mt" id="email-modal-title">✉️ Gửi Email BOD</div><button class="mx"
+          onclick="closeModal('modal-email')">×</button>
+      </div>
+      <div class="fg"><label class="fl">Gửi tới</label><input class="fc" id="em-to" value="lytantai@phuctea.com.vn">
+      </div>
+      <div class="fg"><label class="fl">CC</label><input class="fc" id="em-cc"
+          value="trannhatvu@phuctea.com.vn,phiyen@phuctea.com.vn,hr@phuctea.com.vn"></div>
+      <div class="fg"><label class="fl">Tiêu đề</label><input class="fc" id="em-subject"></div>
+      <div class="fg"><label class="fl">Nội dung</label><textarea class="fc" id="em-body" rows="10"></textarea></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Hẹn giờ gửi (tùy chọn)</label><input class="fc" type="datetime-local"
+            id="em-schedule"></div>
+        <div class="fg"><label class="fl">Thread ID (Reply vào email cũ)</label><input class="fc" id="em-thread"
+            placeholder="Để trống = gửi email mới"></div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn bp" style="flex:1" onclick="sendEmailNow()">📤 Gửi ngay</button>
+        <button class="btn bo" onclick="scheduleEmail()">🕐 Hẹn giờ</button>
+        <button class="btn bo" onclick="aiRewriteEmail()">🤖 AI viết lại</button>
+        <button class="btn bo" onclick="closeModal('modal-email')">Đóng</button>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    // ── CONFIG & STATE ──
-    const CFG = {
-        url: localStorage.getItem('phuc_tea_gas_url') || 'https://script.google.com/macros/s/AKfycby5E5vXhREI_YjDkO_7QoP2d3P8J7L9W8_X_L8T/exec'
+  <!-- Audit Email -->
+  <div class="overlay" id="modal-audit-email">
+    <div class="modal">
+      <div class="mh">
+        <div class="mt">✉️ Gửi biên bản audit</div><button class="mx"
+          onclick="closeModal('modal-audit-email')">×</button>
+      </div>
+      <div class="fg"><label class="fl">Email cửa hàng *</label><input class="fc" id="ae-to"
+          placeholder="email@cửahàng.vn"></div>
+      <div class="fg"><label class="fl">Tiêu đề</label><input class="fc" id="ae-subject"
+          value="Biên bản Audit – Phúc Tea"></div>
+      <div class="fg"><label class="fl">Nội dung</label><textarea class="fc" id="ae-body" rows="8"></textarea></div>
+      <div class="fg"><label class="fl">Hẹn giờ (tùy chọn)</label><input class="fc" type="datetime-local"
+          id="ae-schedule"></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn bp" style="flex:1" onclick="sendAuditEmail()">📤 Gửi</button>
+        <button class="btn bo" onclick="closeModal('modal-audit-email')">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Advice -->
+  <div class="overlay" id="modal-ai-advice">
+    <div class="modal">
+      <div class="mh">
+        <div class="mt" id="ai-advice-title">💡 AI Gợi ý</div><button class="mx"
+          onclick="closeModal('modal-ai-advice')">×</button>
+      </div>
+      <div id="ai-advice-body"
+        style="font-size:13px;line-height:1.8;color:var(--brown);max-height:400px;overflow-y:auto"></div>
+      <div style="margin-top:12px"><button class="btn bo bfull" onclick="closeModal('modal-ai-advice')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════
+    //  CONFIG & STATE
+    // ════════════════════════════════════════
+    const DEFAULT_SHEET_ID = '1tImeHSb1BacVVhJPzQxh2LHffOhqjnX7OVuTrygPJKo';
+    let CFG = {
+      scriptUrl: localStorage.getItem('ops_script_url') || '',
+      apiKey: localStorage.getItem('ops_api_key') || '',
+      sheetId: localStorage.getItem('ops_sheet_id') || DEFAULT_SHEET_ID,
     };
-    
     let D = {
-        stores: [],
-        setupStores: [],
-        audits: [],
-        history: [],
-        plans: [],
-        reports: [],
-        criteria: [],
-        kpi: {}
+      kpi: { stores: 0, setupCount: 0, newStores: 0, targetStores: 30, auditAvg: 0, reauditCount: 0 },
+      auditList: [], secretList: [], setupStores: [], allStores: [],
+      staffList: [], plans: [], reports: [], template: [], auditCriteria: [],
+      timeline: []
     };
+    let reportText = '', planText = '', auditReportText = '';
+    let emailMode = 'plan';
+    let currentStoreEdit = null, currentStaffEdit = null;
+    let currentSetupStoreId = null, currentSetupTasks = [];
 
-    let activeStoreTimeline = null;
-
-    // ── INITIALIZATION ──
-    async function init() {
-        const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-        const now = new Date();
-        document.getElementById('today-str').textContent = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} · Phúc Tea Cần Thơ`;
-        
-        if (CFG.url) {
-            syncAll();
-        } else {
-            showToast('⚠️ Vui lòng cấu hình Apps Script URL', 'red');
-        }
+    // ════════════════════════════════════════
+    //  UTILS
+    // ════════════════════════════════════════
+    const $ = id => document.getElementById(id);
+    function toast(msg, type = 'tok') {
+      const e = $('toastEl'); e.textContent = msg;
+      e.className = `toast ${type} on`;
+      clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 3500);
     }
+    function load(msg = 'Đang xử lý...') { $('loadMsg').textContent = msg; $('loadEl').classList.add('on'); }
+    function unload() { $('loadEl').classList.remove('on'); }
+    function openModal(id) { $(id).classList.add('on'); }
+    function closeModal(id) { $(id).classList.remove('on'); }
+    document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('on'); }));
 
-    // ── NAVIGATION ──
-    function goTab(tabId, el) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.getElementById('tab-' + tabId).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('page-title').textContent = el.textContent.trim();
+    function goPage(id, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+      document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+      $('pg-' + id).classList.add('on');
+      if (el) el.classList.add('on');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    function showAuditTab(id, btn) {
+      ['direct', 'secret', 'quick', 'report'].forEach(t => { const el = $('tab-' + t); if (el) el.style.display = 'none'; });
+      $('tab-' + id).style.display = 'block';
+      document.querySelectorAll('.ptab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+    }
+    function copyText(txt) {
+      if (!txt) { toast('Không có nội dung', 'twarn'); return; }
+      navigator.clipboard.writeText(txt).then(() => toast('✅ Đã copy!'));
+    }
+    function scoreColor(s) { return s >= 85 ? 'var(--green)' : s >= 70 ? 'var(--gold)' : 'var(--red)'; }
+    function scoreBadge(s) {
+      if (s === undefined || s === null || s === '') return '<span class="bdg bb2">–</span>';
+      return s >= 85 ? '<span class="bdg bg2">Đạt</span>' : s >= 70 ? '<span class="bdg by2">Theo dõi</span>' : '<span class="bdg br2">Tái audit</span>';
+    }
+    function statusBadge(s) {
+      const m = { 'Đang hoạt động': 'bg2', 'Đang setup': 'by2', 'Tạm ngưng': 'br2', 'Đã đóng cửa': 'bp2', 'Mới bắt đầu': 'bb2' };
+      return `<span class="bdg ${m[s] || 'bt2'}">${s || '–'}</span>`;
+    }
+    function roleBadge(r) {
+      const m = { 'System': 'br2', 'Admin': 'by2', 'User': 'bb2' };
+      return `<span class="bdg ${m[r] || 'bt2'}">${r || '–'}</span>`;
+    }
+    function getH() { const h = new Date().getHours(); if (h < 11) return 'Chào buổi sáng'; if (h < 13) return 'Chào buổi trưa'; if (h < 18) return 'Chào buổi chiều'; return 'Chào buổi tối'; }
 
-    // ── API ──
-    async function api(action, data = {}) {
-        if (!CFG.url) return { ok: false, error: 'Chưa có URL' };
+    // ════════════════════════════════════════
+    //  API
+    // ════════════════════════════════════════
+    async function api(params) {
+      if (!CFG.scriptUrl) return { ok: false, error: 'Chưa cấu hình Apps Script URL' };
+      try {
+        const res = await fetch(CFG.scriptUrl, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(params), redirect: 'follow'
+        });
+        return await res.json();
+      } catch (e) {
         try {
-            const resp = await fetch(CFG.url, {
-                method: 'POST',
-                mode: 'no-cors', // Apps Script often requires no-cors if not deployed properly with headers
-                body: JSON.stringify({ action, ...data })
-            });
-            // Note: with 'no-cors', we can't see the body. For a real app, use a proxy or set CORS on GS headers.
-            // But since I'm improving the code from the user, I'll assume they have a working GAS setup.
-            // I'll use a standard Fetch with credentials/headers approach for more robust response handling.
-            const response = await fetch(CFG.url + '?action=' + action, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            return await response.json();
-        } catch (e) {
-            console.error('API Error:', e);
-            return { ok: false, error: e.message };
-        }
+          const qs = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(typeof v === 'object' ? JSON.stringify(v) : v)}`).join('&');
+          const r = await fetch(CFG.scriptUrl + '?' + qs, { redirect: 'follow' });
+          return await r.json();
+        } catch (e2) { return { ok: false, error: e2.message }; }
+      }
     }
 
+    // ════════════════════════════════════════
+    //  SETTINGS
+    // ════════════════════════════════════════
+    function openSettings() {
+      $('cfg-url').value = CFG.scriptUrl || '';
+      $('cfg-sheet').value = CFG.sheetId || DEFAULT_SHEET_ID;
+      $('cfg-key').value = CFG.apiKey || '';
+      openModal('modal-settings');
+    }
+    function saveSettings() {
+      const url = $('cfg-url').value.trim();
+      if (!url) { toast('⚠️ Nhập Apps Script URL', 'twarn'); return; }
+      CFG.scriptUrl = url; localStorage.setItem('ops_script_url', url);
+      const sid = $('cfg-sheet').value.trim();
+      if (sid) { CFG.sheetId = sid; localStorage.setItem('ops_sheet_id', sid); $('sheet-link').href = `https://docs.google.com/spreadsheets/d/${sid}`; }
+      const key = $('cfg-key').value.trim();
+      if (key) { CFG.apiKey = key; localStorage.setItem('ops_api_key', key); }
+      closeModal('modal-settings');
+      toast('✅ Đã lưu!'); setTimeout(syncAll, 500);
+    }
+    function setSyncStatus(ok, txt) { $('sync-dot').className = 'sdot ' + (ok ? 'on' : 'off'); $('sync-text').textContent = txt; }
+
+    // ════════════════════════════════════════
+    //  SYNC ALL
+    // ════════════════════════════════════════
     async function syncAll() {
-        const connBadge = document.getElementById('conn-status');
-        connBadge.textContent = 'Đang đồng bộ...';
-        connBadge.className = 'badge badge-gold';
-
-        const res = await api('getData');
-        if (res && res.ok) {
-            D = { ...D, ...res };
-            // Load other data in parallel
-            loadCriteria();
-            loadReports();
-            loadPlans();
-            
-            renderDashboard();
-            renderSetupFilters();
-            renderSetupGrid();
-            renderAuditTable();
-            renderPlansTable();
-            renderReportsTable();
-
-            connBadge.textContent = 'Đã kết nối';
-            connBadge.className = 'badge badge-green';
-            showToast('✅ Đồng bộ hoàn tất!');
-        } else {
-            connBadge.textContent = 'Lỗi kết nối';
-            connBadge.className = 'badge badge-red';
-            showToast('❌ Lỗi đồng bộ: ' + (res?.error || 'Unknown'), 'red');
-        }
+      if (!CFG.scriptUrl) { $('cfg-alert').style.display = 'flex'; setSyncStatus(false, 'Chưa cấu hình'); return; }
+      $('cfg-alert').style.display = 'none';
+      load('Đang đồng bộ Google Sheets...');
+      const data = await api({ action: 'getData' });
+      if (data.ok) {
+        D.kpi = data.kpi || D.kpi;
+        D.auditList = data.auditList || [];
+        D.setupStores = data.setupStores || [];
+        D.setupStores = data.setupStores || [];
+        D.timeline = data.timeline || [];
+        setSyncStatus(true, 'Đồng bộ ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
+        toast('✅ Đồng bộ thành công!');
+      } else {
+        setSyncStatus(false, 'Lỗi kết nối');
+        toast('❌ ' + (data.error || 'Không kết nối'), 'terr');
+      }
+      unload();
+      renderDashboard();
+      // Parallel loads
+      await Promise.all([loadStores(), loadAuditData(), loadPlans(), loadReports(), loadStaff(), loadAuditCriteria()]);
+      loadSetupPage();
+      setTimeout(aiDashInsight, 1000);
     }
 
-    // ── RENDERING ──
-
+    // ════════════════════════════════════════
+    //  DASHBOARD
+    // ════════════════════════════════════════
     function renderDashboard() {
-        const k = D.kpi || {};
-        document.getElementById('kpi-stores').textContent = k.stores || 0;
-        document.getElementById('kpi-reaudit').textContent = k.reauditCount || 0;
-        document.getElementById('kpi-audit').textContent = (k.auditAvg || 0).toFixed(1);
-        
-        const prog = k.targetStores ? Math.round((k.newStores || 0) / k.targetStores * 100) : 0;
-        document.getElementById('kpi-prog-pct').textContent = prog + '%';
-        document.getElementById('kpi-prog-bar').style.width = prog + '%';
+      const k = D.kpi;
+      // KPI
+      $('kpi-stores').textContent = k.stores || 0;
+      $('kpi-new').textContent = `${k.newStores || 0}/${k.targetStores || 30}`;
+      const p = k.targetStores ? Math.round((k.newStores || 0) / k.targetStores * 100) : 0;
+      $('kpi-new-sub').textContent = p + '% mục tiêu 2026';
+      $('kpi-new-sub').className = 'kc ' + (p >= 40 ? 'up' : 'warn');
+      const avg = k.auditAvg || 0;
+      $('kpi-audit').textContent = avg || '–';
+      $('kpi-audit').style.color = scoreColor(avg);
+      $('kpi-audit-sub').textContent = avg >= 85 ? '↑ Đạt mục tiêu ≥85' : '↓ Dưới mục tiêu';
+      $('kpi-audit-sub').className = 'kc ' + (avg >= 85 ? 'up' : 'dn');
+      $('kpi-reaudit').textContent = k.reauditCount || 0;
+      $('kpi-reaudit').style.color = (k.reauditCount || 0) > 0 ? 'var(--red)' : 'var(--green)';
 
-        const tlBody = document.getElementById('timeline-body');
-        if (D.timeline && D.timeline.length) {
-            tlBody.innerHTML = D.timeline.map(ev => `
-                <tr>
-                    <td>${ev.time}</td>
-                    <td>${ev.text}</td>
-                    <td><span class="badge" style="background:${ev.color}20; color:${ev.color}">${ev.text.includes('Audit') ? 'Hoàn thành' : 'Kế hoạch'}</span></td>
-                </tr>
-            `).join('');
-        } else {
-            tlBody.innerHTML = '<tr><td colspan="3" style="text-align:center">Chưa có hoạt động</td></tr>';
-        }
-    }
+      // Alerts
+      let ah = '';
+      if ((k.reauditCount || 0) > 0) {
+        const names = D.auditList.filter(a => a.score < 85).map(a => `${a.name}(${a.score}đ)`).slice(0, 5).join(', ');
+        ah += `<div class="alert ay">⚠️ <span><strong>${k.reauditCount} cửa hàng</strong> cần tái audit trong 15 ngày: ${names}</span></div>`;
+      }
+      $('alerts-container').innerHTML = ah;
 
-    function renderSetupFilters() {
-        const storeSel = document.getElementById('setup-store-filter');
-        const phaseSel = document.getElementById('setup-phase-filter');
-        
-        const stores = [...new Set(D.setupStores.map(s => s.name))];
-        storeSel.innerHTML = '<option value="all">Tất cả cửa hàng setup</option>' + 
-            stores.map(s => `<option value="${s}">${s}</option>`).join('');
-
-        // Extract phases from a template if available, or from existing setup tasks
-        // Simplified: I'll populate this once a store is selected or from a global template
-    }
-
-    async function loadCriteria() {
-        const res = await api('getAuditTemplate');
-        if (res.ok) D.criteria = res.criteria;
-    }
-
-    function renderSetupGrid() {
-        const grid = document.getElementById('setup-grid');
-        const stFilter = document.getElementById('setup-store-filter').value;
-        
-        let filtered = D.setupStores || [];
-        if (stFilter !== 'all') filtered = filtered.filter(s => s.name === stFilter);
-
-        if (!filtered.length) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Không có cửa hàng đang setup</div>';
-            return;
-        }
-
-        grid.innerHTML = filtered.map(s => {
-            const pct = s.progress || 0;
-            return `
-            <div class="store-card" onclick="openTimeline('${s.storeId}', '${s.name}', '${s.openDate}')">
-                <span class="badge ${pct >= 100 ? 'badge-green' : 'badge-gold'}" style="float: right">${s.status}</span>
-                <h3>${s.name}</h3>
-                <div class="info">
-                    <span>📅 Khai trương: ${s.openDate || 'Chưa định ngày'}</span>
-                    <span>👤 Đối tác: ${s.partner}</span>
-                </div>
-                <div class="progress-section">
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 5px;">
-                        <span>TIẾN ĐỘ SETUP</span>
-                        <span style="color:var(--gold)">${pct}%</span>
-                    </div>
-                    <div class="prog-container"><div class="prog-bar" style="background:var(--gold); width: ${pct}%"></div></div>
-                </div>
-            </div>`;
+      // Setup progress
+      const sl = D.setupStores.slice(0, 5);
+      $('setup-progress-dash').innerHTML = sl.length === 0
+        ? '<div class="empty-state"><div class="ei">🏪</div>Chưa có cửa hàng đang setup</div>'
+        : sl.map(s => {
+          const c = s.progress >= 70 ? 'var(--gold)' : s.progress >= 40 ? 'var(--blue)' : 'var(--gray)';
+          return `<div class="prog-item"><div class="prog-hd"><span>${s.name}</span><span style="color:${c};font-weight:700">${s.progress}%</span></div><div class="prog-bg"><div class="prog-bar" style="width:${s.progress}%;background:${c}"></div></div></div>`;
         }).join('');
+
+      // Audit list
+      $('audit-list-dash').innerHTML = D.auditList.length === 0
+        ? '<div class="empty-state"><div class="ei">✅</div>Chưa có dữ liệu audit</div>'
+        : D.auditList.slice(0, 8).map(a => {
+          const c = scoreColor(a.score);
+          return `<div class="store-item"><div class="store-dot" style="background:${c}"></div><div class="store-name">${a.name}</div><div class="store-score" style="color:${c}">${a.score}/100</div></div>`;
+        }).join('');
+
+      // Timeline
+      $('timeline-dash').innerHTML = D.timeline.length === 0
+        ? '<div class="empty-state"><div class="ei">📅</div>Chưa có hoạt động</div>'
+        : D.timeline.map(t => `<div class="tl-item"><div class="tl-dot" style="background:${t.color || 'var(--gray)'}"></div><div><div class="tl-txt">${t.text}</div><div class="tl-time">${t.time}</div></div></div>`).join('');
+
+      // OKR từ kế hoạch tháng gần nhất
+      if (D.plans.length > 0) {
+        const plan = D.plans[0];
+        const newP = D.kpi.newStores && plan.targetStores ? Math.round(D.kpi.newStores / plan.targetStores * 100) : 0;
+        const auditP = D.kpi.auditAvg && plan.targetAudit ? Math.round(D.kpi.auditAvg / plan.targetAudit * 100) : 0;
+        $('okr-container').innerHTML = `
+      <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Kế hoạch: <strong>${plan.month || '–'}</strong></div>
+      <div class="prog-item"><div class="prog-hd"><span>Mở CH mới (Mục tiêu: ${plan.targetStores || '–'})</span><span style="color:var(--gold);font-weight:700">${D.kpi.newStores || 0}/${plan.targetStores || '–'}</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(newP, 100)}%;background:var(--gold)"></div></div></div>
+      <div class="prog-item"><div class="prog-hd"><span>Audit TB (Mục tiêu: ≥${plan.targetAudit || 85}đ)</span><span style="color:var(--blue);font-weight:700">${D.kpi.auditAvg || 0}/100</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(auditP, 100)}%;background:var(--blue)"></div></div></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--gray)">Ngân sách dự kiến: <strong style="color:var(--brown)">${plan.budget || 0}tr</strong></div>`;
+      }
+
+      // Date
+      const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const now = new Date();
+      $('today-str').textContent = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} · Mục tiêu 2026: ${k.targetStores || 30} cửa hàng mới`;
+      $('greeting').textContent = `${getH()}, Liêm 👋`;
     }
 
-    // ── TIMELINE LOGIC ──
-    async function openTimeline(storeId, name, openDate) {
-        document.getElementById('tl-store-name').textContent = name;
-        document.getElementById('tl-meta').textContent = `Mã: ${storeId} | Ngày dự kiến KT: ${openDate || 'Chưa định'}`;
-        
-        const res = await api('getStoreTasks', { storeId });
-        if (res.ok) {
-            activeStoreTimeline = { storeId, tasks: res.tasks, launchDate: openDate };
-            renderTimelineTasks(res.tasks);
-            updateTimelineProgress(res.progress);
-            openModal('modal-timeline');
-            
-            // Populate phase filter for this specific store
-            const phaseSel = document.getElementById('setup-phase-filter');
-            const phases = [...new Set(res.tasks.map(t => t.phase))];
-            phaseSel.innerHTML = '<option value="all">Tất cả các giai đoạn</option>' + 
-                phases.map(p => `<option value="${p}">${p}</option>`).join('');
-            phaseSel.onchange = () => filterTimelineByPhase(phaseSel.value);
-        } else {
-            showToast('❌ Không thể tải timeline', 'red');
+    // ════════════════════════════════════════
+    //  STORES
+    // ════════════════════════════════════════
+    let _allStores = [];
+    async function loadStores() {
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getStores' });
+      if (data.ok) {
+        _allStores = data.stores || [];
+        D.allStores = _allStores.map(s => s.name);
+        $('store-count').textContent = _allStores.length;
+        renderStores(_allStores);
+        updateAllStoreDropdowns();
+      }
+    }
+    function filterStores() {
+      let list = [..._allStores];
+      const status = $('fs-status').value, brand = $('fs-brand').value;
+      const region = $('fs-region').value, model = $('fs-model').value;
+      const type = $('fs-type').value, search = $('fs-search').value.toLowerCase();
+      if (status !== 'all') list = list.filter(s => s.status === status);
+      if (brand !== 'all') list = list.filter(s => s.brand === brand);
+      if (region !== 'all') list = list.filter(s => s.region === region);
+      if (model !== 'all') list = list.filter(s => s.model === model);
+      if (type !== 'all') list = list.filter(s => s.type === type);
+      if (search) list = list.filter(s => (s.name + s.owner + s.storeId + s.address + s.province).toLowerCase().includes(search));
+      $('store-count').textContent = list.length;
+      renderStores(list);
+    }
+    function renderStores(list) {
+      const tbody = $('stores-tbody');
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">Không có dữ liệu</div></td></tr>'; return; }
+      tbody.innerHTML = list.map(s => {
+        const prog = s.setupProgress != null ? `<div class="prog-bg" style="width:80px"><div class="prog-bar" style="width:${s.setupProgress}%;background:var(--gold)"></div></div><small>${s.setupProgress}%</small>` : '–';
+        return `<tr>
+      <td><code>${s.storeId || '–'}</code></td>
+      <td style="font-weight:600">${s.name}</td>
+      <td>${s.brand || '–'}</td>
+      <td>${s.owner || '–'}<br><small style="color:var(--gray)">${s.phone || ''}</small></td>
+      <td>${s.model || '–'}</td>
+      <td>${s.type || '–'}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td>${s.status === 'Đang setup' ? prog : '–'}</td>
+      <td>${s.launchDate || '–'}</td>
+      <td>${s.province || '–'}</td>
+      <td style="max-width:150px;white-space:normal;font-size:12px">${s.address || '–'}</td>
+      <td>
+        <button class="btn bo bsm" onclick="editStore('${s.storeId}')">✏️</button>
+        <button class="btn bd bsm" onclick="deleteStoreConfirm('${s.storeId}','${s.name}')">🗑</button>
+      </td>
+    </tr>`;
+      }).join('');
+    }
+    function updateAllStoreDropdowns() {
+      const names = _allStores.map(s => s.name);
+      ['audit-store', 'rpt-audit-store'].forEach(id => {
+        const sel = $(id); if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">-- Chọn cửa hàng --</option>';
+        names.forEach(n => sel.innerHTML += `<option value="${n}"${n === cur ? ' selected' : ''}>${n}</option>`);
+      });
+      // staff store filter
+      const fns = $('fns-store');
+      if (fns) {
+        const cur = fns.value;
+        fns.innerHTML = '<option value="all">Tất cả cửa hàng</option><option value="Hệ Thống">Hệ Thống</option>';
+        names.forEach(n => fns.innerHTML += `<option value="${n}"${n === cur ? ' selected' : ''}>${n}</option>`);
+      }
+    }
+    function openStoreModal(mode) {
+      currentStoreEdit = null;
+      ['ns-id', 'ns-name', 'ns-owner', 'ns-phone', 'ns-email', 'ns-addr', 'ns-storeNo', 'ns-province', 'ns-coords', 'ns-note'].forEach(id => { $(id).value = ''; });
+      ['ns-dob', 'ns-setup-start', 'ns-launch'].forEach(id => { $(id).value = ''; });
+      $('ns-brand').value = 'Phúc Tea'; $('ns-model').value = 'Tiêu chuẩn'; $('ns-type').value = 'Nhượng quyền';
+      $('ns-status').value = 'Đang setup'; $('ns-region').value = 'Miền Tây';
+      toggleSetupExtra('Đang setup');
+      $('store-modal-title').textContent = '+ Thêm cửa hàng ' + (mode === 'setup' ? 'setup' : 'mới');
+      openModal('modal-store');
+    }
+    function editStore(storeId) {
+      const s = _allStores.find(x => x.storeId === storeId); if (!s) return;
+      currentStoreEdit = s;
+      $('ns-id').value = s.storeId || ''; $('ns-name').value = s.name || '';
+      $('ns-brand').value = s.brand || 'Phúc Tea'; $('ns-model').value = s.model || 'Tiêu chuẩn';
+      $('ns-type').value = s.type || 'Nhượng quyền'; $('ns-status').value = s.status || 'Đang hoạt động';
+      $('ns-owner').value = s.owner || ''; $('ns-phone').value = s.phone || '';
+      $('ns-email').value = s.email || ''; $('ns-storeNo').value = s.storeNo || '';
+      $('ns-province').value = s.province || ''; $('ns-region').value = s.region || 'Miền Tây';
+      $('ns-coords').value = s.coords || ''; $('ns-addr').value = s.address || '';
+      $('ns-note').value = s.note || '';
+      if (s.ownerDob) $('ns-dob').value = s.ownerDob.split('/').reverse().join('-');
+      if (s.launchDate) $('ns-launch').value = s.launchDate.split('/').reverse().join('-');
+      toggleSetupExtra(s.status);
+      $('store-modal-title').textContent = '✏️ Sửa: ' + s.name;
+      openModal('modal-store');
+    }
+    function toggleSetupExtra(status) {
+      $('ns-setup-extra').style.display = status === 'Đang setup' ? 'block' : 'none';
+    }
+    async function saveStoreForm() {
+      const name = $('ns-name').value.trim();
+      if (!name) { toast('⚠️ Nhập tên cửa hàng', 'twarn'); return; }
+      load('Đang lưu cửa hàng...');
+      const d = {
+        storeId: $('ns-id').value.trim() || undefined,
+        name, brand: $('ns-brand').value, model: $('ns-model').value,
+        type: $('ns-type').value, status: $('ns-status').value,
+        owner: $('ns-owner').value, phone: $('ns-phone').value,
+        email: $('ns-email').value, storeNo: $('ns-storeNo').value,
+        ownerDob: $('ns-dob').value, province: $('ns-province').value,
+        region: $('ns-region').value, coords: $('ns-coords').value,
+        address: $('ns-addr').value, note: $('ns-note').value,
+        launchDate: $('ns-launch').value, setupStart: $('ns-setup-start').value,
+      };
+      if (currentStoreEdit) d.storeId = currentStoreEdit.storeId;
+      const res = await api({ action: 'saveStore', data: d });
+      unload();
+      if (res.ok) {
+        toast(`✅ Đã lưu: ${name}`);
+        closeModal('modal-store');
+        await loadStores();
+        // If new setup store: create timeline
+        if (d.status === 'Đang setup' && res.storeId) {
+          const tlRes = await api({ action: 'createTimeline', storeId: res.storeId, storeName: name, launchDate: d.launchDate || '' });
+          if (tlRes.ok && !tlRes.alreadyExists) toast('📋 Đã tạo timeline cho ' + name, 'tok');
         }
+        loadSetupPage();
+        renderDashboard();
+      } else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+    }
+    async function deleteStoreConfirm(storeId, name) {
+      if (!confirm(`Xóa cửa hàng "${name}" (${storeId})?\nThao tác này không thể hoàn tác.`)) return;
+      load('Đang xóa...');
+      const res = await api({ action: 'deleteStore', storeId });
+      unload();
+      if (res.ok) { toast('🗑 Đã xóa ' + name, 'tok'); await loadStores(); }
+      else toast('❌ ' + res.error, 'terr');
+    }
+    function exportStores() {
+      if (!_allStores.length) { toast('Không có dữ liệu', 'twarn'); return; }
+      const rows = [['Store ID', 'Tên', 'Thương hiệu', 'Mô hình', 'Loại', 'Chủ', 'SĐT', 'Trạng thái', 'Khai trương', 'Tỉnh/TP', 'Địa chỉ', 'Khu vực']];
+      _allStores.forEach(s => rows.push([s.storeId, s.name, s.brand, s.model, s.type, s.owner, s.phone, s.status, s.launchDate, s.province, s.address, s.region]));
+      exportXLSX(rows, 'DanhSachCuaHang');
     }
 
-    function renderTimelineTasks(tasks) {
-        const body = document.getElementById('tl-task-body');
-        let currentPhase = '';
+    // ════════════════════════════════════════
+    //  SETUP
+    // ════════════════════════════════════════
+    async function loadSetupPage() {
+      if (!CFG.scriptUrl) return;
+      load('Đang tải setup...');
+      // Load template
+      const tplData = await api({ action: 'getSetupTemplate' });
+      if (tplData.ok) D.template = tplData.template || [];
+
+      // Build phase filter
+      const phases = [...new Set(D.template.map(t => t.phase).filter(Boolean))];
+      const phSel = $('setup-phase-filter');
+      phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>' + phases.map(p => `<option value="${p}">${p}</option>`).join('');
+
+      // Load setup stores (from getSetupStores action)
+      const data = await api({ action: 'getSetupStores' });
+      if (data.ok) D.setupStores = data.setupStores || [];
+      unload();
+
+      $('setup-cnt').textContent = D.setupStores.length;
+      $('target-2026').textContent = D.kpi.targetStores || 30;
+      const pct = D.kpi.targetStores ? Math.round((D.kpi.newStores || 0) / D.kpi.targetStores * 100) : 0;
+      $('target-sub').textContent = `${D.kpi.newStores || 0}/${D.kpi.targetStores || 30} (${pct}%)`;
+      $('kt-cnt').textContent = D.kpi.newStores || 0;
+
+      // Monthly plan KT
+      if (D.plans.length > 0) {
+        const plan = D.plans[0];
+        $('kt-plan').textContent = `KH tháng này: ${plan.targetStores || 0} CH · Q2: ${(plan.targetStores || 0) * 3} CH`;
+      }
+
+      renderSetupList();
+    }
+
+    function filterSetupPhase() {
+      renderSetupList();
+    }
+
+    function renderSetupList() {
+      const list = $('setup-stores-list');
+      const phase = $('setup-phase-filter').value;
+      if (!D.setupStores.length) {
+        list.innerHTML = '<div class="empty-state"><div class="ei">🏪</div>Không có cửa hàng đang setup.<br>Nhấn "+ Thêm cửa hàng setup" để bắt đầu.</div>';
+        return;
+      }
+      const tasks = D.template.length ? D.template : defaultTasks();
+
+      list.innerHTML = D.setupStores.map((s, si) => {
+        const sid = 's_' + si;
+        const pct = s.progress || 0;
+        const c = pct >= 70 ? 'var(--gold)' : pct >= 40 ? 'var(--blue)' : 'var(--gray)';
         
-        body.innerHTML = '';
-        tasks.forEach((t, i) => {
-            if (t.phase !== currentPhase) {
-                currentPhase = t.phase;
-                const headRow = document.createElement('tr');
-                headRow.innerHTML = `<td colspan="6" class="task-header">${currentPhase}</td>`;
-                body.appendChild(headRow);
-            }
-            
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><div class="check-box ${t.done ? 'checked' : ''}" onclick="toggleTask(${i})">${t.done ? '✓' : ''}</div></td>
-                <td><div style="font-weight:600">${t.task}</div></td>
-                <td><input type="text" class="f-input" style="padding:4px 8px; font-size:12px" value="${t.startDate}" onchange="updateTaskField(${i}, 'startDate', this.value)"></td>
-                <td><input type="text" class="f-input" style="padding:4px 8px; font-size:12px" value="${t.deadline}" onchange="updateTaskField(${i}, 'deadline', this.value)"></td>
-                <td><div style="font-size:12px; color:var(--gray)">${t.owner}</div></td>
-                <td><input type="text" class="f-input" style="padding:4px 8px; font-size:12px" value="${t.note}" placeholder="Kết quả..." onchange="updateTaskField(${i}, 'note', this.value)"></td>
-            `;
-            body.appendChild(tr);
-        });
-    }
-
-    function toggleTask(index) {
-        const task = activeStoreTimeline.tasks[index];
-        task.done = !task.done;
-        task.doneDate = task.done ? new Date().toLocaleDateString('vi-VN') : '';
-        renderTimelineTasks(activeStoreTimeline.tasks);
+        // Render all tasks, hide non-matching ones via CSS to keep indices stable
+        const checks = tasks.map((t, ti) => {
+          const isHidden = (phase !== 'all' && t.phase !== phase);
+          return `
+      <div class="chk-item ${isHidden ? 'hidden' : ''}" id="${sid}_${ti}" onclick="toggleSetupTask('${sid}_${ti}','${s.storeId || si}',${si},${ti})">
+        <div class="chk-box"></div>
+        <div>
+          <div class="chk-text">${t.task}</div>
+          <div class="chk-sub">${t.phase ? t.phase + ' · ' : ''}${t.owner || ''} ${t.deltaText ? '· ' + t.deltaText : ''}</div>
+        </div>
+      </div>`;
+        }).join('');
         
-        const done = activeStoreTimeline.tasks.filter(t => t.done).length;
-        const total = activeStoreTimeline.tasks.length;
-        updateTimelineProgress(Math.round(done/total*100));
+        const visibleTasksCount = phase === 'all' ? tasks.length : tasks.filter(t => t.phase === phase).length;
+
+        return `<div class="setup-card" id="card_${sid}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:15px">${s.name}</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px">
+            <code>${s.storeId || '–'}</code>
+            ${s.partner ? ' · Đối tác: ' + s.partner : ''}
+            ${s.openDate ? ' · KT: ' + s.openDate : ''}
+            ${s.setupStart ? ' · Setup: ' + s.setupStart : ''}
+          </div>
+        </div>
+        <span class="bdg ${pct >= 100 ? 'bg2' : 'by2'}" id="bdg_${sid}">${pct >= 100 ? 'Hoàn thành' : 'Đang setup'} · ${pct}%</span>
+      </div>
+      <div class="prog-item">
+        <div class="prog-hd"><span style="font-size:12px">Tiến độ (${visibleTasksCount} tasks${phase !== 'all' ? ' – giai đoạn này' : ''})</span><span id="pct_${sid}" style="color:${c};font-weight:700">${pct}%</span></div>
+        <div class="prog-bg"><div class="prog-bar" id="bar_${sid}" style="width:${pct}%;background:${c}"></div></div>
+      </div>
+      <div id="cl_${sid}">${checks}</div>
+      <div style="margin-top:12px">
+        <div class="fg"><label class="fl">Ghi chú</label><textarea class="fc" rows="2" id="note_${sid}" placeholder="Ghi chú tiến độ...">${s.note || ''}</textarea></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn bp bsm" onclick="saveSetupTasks('${s.storeId || si}','${sid}')">💾 Lưu lên Sheets</button>
+          <button class="btn bo bsm" onclick="loadStoreTasks('${s.storeId}','${sid}')">🔄 Tải tasks</button>
+          <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}')">📥 Xuất Excel</button>
+          <button class="btn bo bsm" onclick="markStoreAsLaunched('${s.storeId}','${s.name}','${sid}')">🎉 Đã KT</button>
+          <button class="btn bo bsm" onclick="aiSetupAdvice('${s.name}',${pct})">🤖 AI gợi ý</button>
+        </div>
+      </div>
+    </div>`;
+      }).join('');
     }
 
-    function updateTaskField(index, field, value) {
-        activeStoreTimeline.tasks[index][field] = value;
+    function defaultTasks() {
+      return [
+        { task: 'Xác nhận mặt bằng & ký hợp đồng', phase: 'Giai đoạn 1 – Chuẩn bị', deltaText: 'KT-25', owner: 'Operations Leader' },
+        { task: 'Lên kế hoạch thi công', phase: 'Giai đoạn 1 – Chuẩn bị', deltaText: 'KT-20', owner: 'Operations Leader' },
+        { task: 'Giám sát thi công', phase: 'Giai đoạn 2 – Thi công', deltaText: 'KT-14', owner: 'NV Setup' },
+        { task: 'Lắp đặt thiết bị', phase: 'Giai đoạn 2 – Thi công', deltaText: 'KT-7', owner: 'NV Setup' },
+        { task: 'Giao đồng phục nhân viên', phase: 'Giai đoạn 2 – Thi công', deltaText: 'KT-7', owner: 'Operations Staff' },
+        { task: 'Đào tạo công thức & vận hành', phase: 'Giai đoạn 3 – Đào tạo', deltaText: 'KT-5', owner: 'Operations Leader' },
+        { task: 'Soft opening & điều chỉnh', phase: 'Giai đoạn 4 – Khai trương', deltaText: 'KT-3', owner: 'Operations Leader' },
+        { task: 'Audit trước KT (≥85đ)', phase: 'Giai đoạn 4 – Khai trương', deltaText: 'KT-2', owner: 'Operations Leader' },
+        { task: 'Khai trương chính thức', phase: 'Giai đoạn 4 – Khai trương', deltaText: 'KT', owner: 'Operations Leader' },
+      ];
     }
 
-    function updateTimelineProgress(pct) {
-        document.getElementById('tl-prog-text').textContent = pct + '%';
-        document.getElementById('tl-prog-bar').style.width = pct + '%';
+    function toggleSetupTask(checkId, storeId, storeIdx, taskIdx) {
+      const el = $(checkId); if (!el) return;
+      el.classList.toggle('done');
+      el.querySelector('.chk-box').textContent = el.classList.contains('done') ? '✓' : '';
+      recalcSetupProgress(storeIdx, 's_' + storeIdx);
     }
 
-    async function saveTimeline() {
-        if (!activeStoreTimeline) return;
-        showToast('Saving...');
-        const res = await api('saveStoreTasks', { 
-            storeId: activeStoreTimeline.storeId, 
-            tasks: activeStoreTimeline.tasks 
-        });
-        if (res.ok) {
-            showToast('✅ Đã lưu tiến độ!');
-            syncAll();
+    function recalcSetupProgress(idx, sid) {
+      const cl = $('cl_' + sid); if (!cl) return;
+      const items = cl.querySelectorAll('.chk-item');
+      const done = [...items].filter(i => i.classList.contains('done')).length;
+      const pct = items.length ? Math.round(done / items.length * 100) : 0;
+      const pe = $('pct_' + sid); if (pe) pe.textContent = pct + '%';
+      const be = $('bar_' + sid); if (be) be.style.width = pct + '%';
+      const bdg = $('bdg_' + sid); if (bdg) bdg.textContent = (pct >= 100 ? 'Hoàn thành' : 'Đang setup') + ' · ' + pct + '%';
+      if (D.setupStores[idx]) D.setupStores[idx].progress = pct;
+    }
+
+    async function loadStoreTasks(storeId, sid) {
+      if (!storeId || storeId === 'undefined') return;
+      load('Đang tải tasks từ Sheets...');
+      const data = await api({ action: 'getStoreTasks', storeId });
+      unload();
+      if (!data.ok || !data.tasks || !data.tasks.length) {
+        toast('Chưa có tasks lưu trên Sheets. Tích task và nhấn Lưu.', 'twarn');
+        return;
+      }
+      // Apply done status to UI
+      const cl = $('cl_' + sid); if (!cl) return;
+      const items = cl.querySelectorAll('.chk-item');
+      items.forEach((item, i) => {
+        const t = data.tasks[i];
+        if (t && t.done) {
+          item.classList.add('done');
+          item.querySelector('.chk-box').textContent = '✓';
         } else {
-            showToast('❌ Lỗi lưu dữ liệu', 'red');
+          item.classList.remove('done');
+          item.querySelector('.chk-box').textContent = '';
         }
+      });
+      const si = parseInt(sid.replace('s_', ''));
+      recalcSetupProgress(si, sid);
+      toast(`✅ Đã tải ${data.tasks.length} tasks (${data.done}/${data.total} hoàn thành)`);
     }
 
-    function filterTimelineByPhase(phase) {
-        const filtered = phase === 'all' 
-            ? activeStoreTimeline.tasks 
-            : activeStoreTimeline.tasks.filter(t => t.phase === phase);
-        renderTimelineTasks(filtered);
+    async function saveSetupTasks(storeId, sid) {
+      if (!storeId || storeId === 'undefined') { toast('⚠️ Thiếu Store ID', 'twarn'); return; }
+      const cl = $('cl_' + sid); if (!cl) return;
+      const items = cl.querySelectorAll('.chk-item');
+      const tasks = [];
+      const tpl = D.template.length ? D.template : defaultTasks();
+      items.forEach((item, i) => {
+        const t = tpl[i] || {};
+        tasks.push({
+          id: t.id || 'T' + (i + 1), phase: t.phase || '', task: t.task || item.querySelector('.chk-text').textContent,
+          startDate: '', deadline: '', owner: t.owner || '', done: item.classList.contains('done'),
+          doneDate: item.classList.contains('done') ? new Date().toLocaleDateString('vi-VN') : '',
+          note: ''
+        });
+      });
+      load('Đang lưu tasks lên Sheets...');
+      const res = await api({ action: 'saveStoreTasks', storeId, tasks });
+      unload();
+      if (res.ok) {
+        toast(`✅ Đã lưu ${tasks.length} tasks, tiến độ ${res.progress || 0}%`);
+        if (D.setupStores) { const idx = D.setupStores.findIndex(s => s.storeId === storeId); if (idx >= 0) D.setupStores[idx].progress = res.progress || 0; }
+      } else toast('❌ ' + (res.error || 'Lỗi lưu'), 'terr');
     }
 
-    // ── AUDIT ──
+    async function markStoreAsLaunched(storeId, name, sid) {
+      if (!confirm(`Xác nhận ${name} đã khai trương thành công?`)) return;
+      // Mark all tasks done
+      const cl = $('cl_' + sid); if (cl) { cl.querySelectorAll('.chk-item').forEach(i => { i.classList.add('done'); i.querySelector('.chk-box').textContent = '✓'; }); }
+      await saveSetupTasks(storeId, sid);
+      toast(`🎉 ${name} đã khai trương!`);
+      D.kpi.newStores = (D.kpi.newStores || 0) + 1;
+      renderDashboard();
+      loadSetupPage();
+    }
+
+    async function aiSetupAdvice(name, pct) {
+      load('AI đang tư vấn...');
+      const r = await callAI(`Cửa hàng ${name} đang setup, tiến độ ${pct}%. Đưa 5 việc cần làm ngay để khai trương đúng hẹn. Ngắn gọn, bullet points.`);
+      unload();
+      $('ai-advice-title').textContent = `💡 AI gợi ý – ${name} (${pct}%)`;
+      $('ai-advice-body').innerHTML = r.replace(/\n/g, '<br>');
+      openModal('modal-ai-advice');
+    }
+
+    async function exportTimelineStore(storeId, storeName) {
+      if (!storeId) { toast('⚠️ Thiếu Store ID', 'twarn'); return; }
+      load('Đang tải timeline...');
+      const data = await api({ action: 'getStoreTasks', storeId });
+      unload();
+      if (!data.ok || !data.tasks || !data.tasks.length) {
+        toast('Chưa có tasks để xuất', 'twarn'); return;
+      }
+      const rows = [['Task ID', 'Giai đoạn', 'Công việc', 'Ngày bắt đầu', 'Deadline', 'Người phụ trách', 'Hoàn thành', 'Ngày HT', 'Ghi chú']];
+      data.tasks.forEach(t => rows.push([t.id, t.phase, t.task, t.startDate, t.deadline, t.owner, t.done ? 'Xong' : 'Chưa', t.doneDate, t.note]));
+      exportXLSX(rows, `Timeline_${storeName.replace(/\s/g, '_')}`);
+    }
+
+    // ════════════════════════════════════════
+    //  AUDIT
+    // ════════════════════════════════════════
+    async function loadAuditCriteria() {
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getAuditTemplate' });
+      if (data.ok) {
+        D.auditCriteria = data.criteria || [];
+        renderAuditForm();
+        renderAuditGuide();
+      }
+    }
+
+    function renderAuditForm() {
+      const crit = D.auditCriteria;
+      if (!crit.length) { $('audit-criteria-container').innerHTML = '<div class="empty-state">Tải tiêu chí thất bại</div>'; return; }
+      let html = '';
+      let section = '';
+      let maxTotal = 0, stdTotal = 0;
+      crit.forEach((c, i) => {
+        if (c.section !== section) {
+          section = c.section;
+          html += `<div class="audit-section-hd">${section}</div>`;
+        }
+        maxTotal += c.maxScore; stdTotal += c.standardScore;
+        html += `<div class="audit-row">
+      <div class="audit-name">${c.criterion}</div>
+      <div class="audit-std" title="Điểm chuẩn">${c.standardScore}</div>
+      <div class="audit-max">/${c.maxScore}</div>
+      <input class="audit-inp" id="ac_${i}" type="number" min="0" max="${c.maxScore}" value="${c.standardScore}" oninput="calcAuditScore()">
+    </div>`;
+      });
+      $('audit-criteria-container').innerHTML = html;
+      $('audit-std-total').textContent = stdTotal;
+      $('audit-max-total').textContent = maxTotal;
+      calcAuditScore();
+    }
+
+    function renderAuditGuide() {
+      const crit = D.auditCriteria;
+      if (!crit.length) { $('audit-guide').innerHTML = '<div class="empty-state">Chưa có dữ liệu</div>'; return; }
+      let html = '';
+      let section = '';
+      crit.forEach(c => {
+        if (c.section !== section) { section = c.section; html += `<div class="audit-section-hd">${section}</div>`; }
+        html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span>${c.criterion}</span>
+      <span style="color:var(--blue);font-weight:600">Chuẩn: ${c.standardScore}/${c.maxScore}</span>
+    </div>`;
+      });
+      $('audit-guide').innerHTML = html;
+    }
+
+    function calcAuditScore() {
+      const crit = D.auditCriteria;
+      let total = 0;
+      for (let i = 0; i < crit.length; i++) { const inp = $('ac_' + i); if (inp) total += parseInt(inp.value) || 0; }
+      const el = $('audit-total'), st = $('audit-status');
+      el.textContent = total;
+      if (total >= 85) { el.style.color = 'var(--green)'; st.textContent = '✓ Đạt tiêu chuẩn (≥85)'; st.style.color = 'var(--green)'; }
+      else if (total >= 70) { el.style.color = 'var(--gold)'; st.textContent = '⚠ Cần tái audit trong 15 ngày'; st.style.color = 'var(--gold)'; }
+      else { el.style.color = 'var(--red)'; st.textContent = '✗ Dưới tiêu chuẩn – Hành động ngay'; st.style.color = 'var(--red)'; }
+    }
+
+    async function loadAuditData() {
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getAuditData' });
+      if (data.ok) {
+        D.auditList = data.auditList || [];
+        D.kpi.auditAvg = data.avg || 0;
+        D.kpi.reauditCount = data.reauditCount || 0;
+        renderAuditTable();
+        renderAuditStats();
+      }
+    }
+
     function renderAuditTable() {
-        const body = document.getElementById('audit-body');
-        body.innerHTML = D.auditList.map(a => `
-            <tr>
-                <td><strong>${a.name}</strong></td>
-                <td>${a.date}</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:10px">
-                        <div class="score-circle" style="background:${scoreColor(a.score)}20; color:${scoreColor(a.score)}">${a.score}</div>
-                        <div style="font-size:11px; color:var(--gray)">${a.type}</div>
-                    </div>
-                </td>
-                <td><span class="badge ${a.score >= 85 ? 'badge-green' : 'badge-red'}">${a.score >= 85 ? 'ĐẠT' : 'KHÔNG ĐẠT'}</span></td>
-                <td>
-                    <button class="btn btn-outline" style="padding: 6px 12px" onclick="showAuditHistory('${a.name}')">Lịch sử</button>
-                </td>
-            </tr>
-        `).join('');
+      const body = $('audit-body-direct');
+      if (!D.auditList.length) { body.innerHTML = '<tr><td colspan="6"><div class="empty-state" style="padding:16px">Chưa có dữ liệu. Nhấn "Làm mới".</div></td></tr>'; return; }
+      body.innerHTML = D.auditList.map(a => {
+        const c = scoreColor(a.score);
+        return `<tr>
+      <td style="font-weight:600">${a.name}</td>
+      <td style="color:${c};font-weight:700">${a.score}/100</td>
+      <td>${a.date || '–'}</td>
+      <td>${scoreBadge(a.score)}</td>
+      <td style="max-width:200px;white-space:normal;font-size:12px">${a.note || '–'}</td>
+      <td><button class="btn bo bsm" onclick="viewAuditReport('${a.name}',${a.score})">📋 BB</button></td>
+    </tr>`;
+      }).join('');
     }
 
-    function scoreColor(s) {
-        return s >= 85 ? '#2D8248' : s >= 70 ? '#F5A623' : '#E53E3E';
+    function renderAuditStats() {
+      const avg = D.kpi.auditAvg || 0, cnt = D.kpi.reauditCount || 0;
+      const ae = $('audit-avg'); if (ae) { ae.textContent = avg + '/100'; ae.style.color = scoreColor(avg); }
+      const as = $('audit-avg-sub'); if (as) { as.textContent = avg >= 85 ? '✓ Đạt mục tiêu ≥85' : 'Cần cải thiện'; as.className = 'kc ' + (avg >= 85 ? 'up' : 'dn'); }
+      const ar = $('audit-reaudit-cnt'); if (ar) ar.textContent = cnt;
+      const ad = $('audit-done'); if (ad) ad.textContent = D.auditList.length;
+      const ac = $('audit-alerts-container');
+      if (ac) ac.innerHTML = cnt > 0 ? `<div class="alert ay">⚠️ <span><strong>${cnt} cửa hàng</strong> dưới 85 điểm: ${D.auditList.filter(a => a.score < 85).map(a => `${a.name}(${a.score}đ)`).join(', ')}</span></div>` : '';
     }
 
-    async function showAuditHistory(storeName) {
-        document.getElementById('hist-title').textContent = 'Lịch sử Audit: ' + storeName;
-        const list = document.getElementById('audit-history-list');
-        
-        const history = D.history.filter(h => h.name === storeName);
-        if (!history.length) {
-            list.innerHTML = '<div style="text-align:center; padding:20px">Không có dữ liệu lịch sử</div>';
-        } else {
-            list.innerHTML = history.map(h => `
-                <div class="history-item">
-                    <div>
-                        <div style="font-weight:700">${h.date}</div>
-                        <div style="font-size:11px; color:var(--gray)">${h.type} · ${h.auditor || 'Chưa rõ'}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:15px">
-                        <div style="font-size:12px; color:var(--brown); max-width: 250px; text-align: right">${h.note || '-'}</div>
-                        <div class="score-circle" style="background:${scoreColor(h.score)}20; color:${scoreColor(h.score)}">${h.score}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        openModal('modal-audit-history');
+    async function loadSecretAudit() {
+      load('Đang tải audit bí ẩn...');
+      const data = await api({ action: 'getSecretAudit' });
+      unload();
+      if (data.ok) {
+        D.secretList = data.secretAuditList || [];
+        const body = $('audit-body-secret');
+        if (!D.secretList.length) { body.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:16px">Chưa có dữ liệu</div></td></tr>'; return; }
+        body.innerHTML = D.secretList.map(a => {
+          const c = scoreColor(a.score);
+          return `<tr><td>${a.timestamp || '–'}</td><td>${a.store}</td><td style="color:${c};font-weight:700">${a.score}/100</td><td style="max-width:200px;white-space:normal">${a.comment || '–'}</td><td>${scoreBadge(a.score)}</td></tr>`;
+        }).join('');
+        toast('✅ Đã tải audit bí ẩn!');
+      } else toast('❌ ' + data.error, 'terr');
     }
 
-    // ── AUDIT FORM ──
-    function openAuditForm() {
-        const sel = document.getElementById('aud-store-select');
-        const stores = D.stores && D.stores.length ? D.stores : [{name: 'Mời đồng bộ...'}];
-        sel.innerHTML = stores.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-        
-        const cont = document.getElementById('criteria-container');
-        let currentSection = '';
-        cont.innerHTML = '';
-        
-        D.criteria.forEach((c, i) => {
-            if (c.section !== currentSection) {
-                currentSection = c.section;
-                const h = document.createElement('div');
-                h.className = 'task-header';
-                h.style.background = '#F7F8FA';
-                h.style.color = 'var(--brown)';
-                h.style.marginTop = '24px';
-                h.textContent = currentSection;
-                cont.appendChild(h);
-            }
-            const div = document.createElement('div');
-            div.style.display = 'grid';
-            div.style.gridTemplateColumns = '1fr 100px 100px';
-            div.style.gap = '16px';
-            div.style.alignItems = 'center';
-            div.style.padding = '10px 0';
-            div.style.borderBottom = '1px solid var(--gray-light)';
-            div.innerHTML = `
-                <div style="font-size:13px">${c.criterion}</div>
-                <div style="text-align:center; color:var(--gray); font-size:11px">Max: ${c.maxScore}</div>
-                <input type="number" class="f-input aud-score-input" data-id="${c.id}" data-max="${c.maxScore}" value="${c.standardScore}" min="0" max="${c.maxScore}" onchange="calcAuditTotal()">
-            `;
-            cont.appendChild(div);
-        });
-        calcAuditTotal();
-        openModal('modal-audit');
+    async function saveAudit() {
+      const store = $('audit-store').value;
+      if (!store) { toast('⚠️ Chọn cửa hàng trước', 'twarn'); return; }
+      const crit = D.auditCriteria;
+      const scores = {};
+      let total = 0;
+      crit.forEach((c, i) => { const inp = $('ac_' + i); const v = parseInt(inp?.value) || 0; scores[c.id] = v; total += v; });
+      load('Đang lưu audit...');
+      const res = await api({ action: 'saveAudit', data: { store, score: total, date: $('audit-date').value, type: $('audit-type').value, actionPlan: $('action-plan').value, scores, auditor: 'Dương Thanh Liêm' } });
+      unload();
+      if (res.ok) {
+        toast(`✅ Đã lưu audit ${store}: ${total}/100`);
+        $('action-plan').value = '';
+        await loadAuditData();
+        renderDashboard();
+      } else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
     }
 
-    function calcAuditTotal() {
-        let total = 0;
-        document.querySelectorAll('.aud-score-input').forEach(input => {
-            total += Number(input.value) || 0;
-        });
-        document.getElementById('aud-total-score').textContent = total;
-        document.getElementById('aud-total-score').style.color = scoreColor(total);
+    async function aiAuditAdvice() {
+      const store = $('audit-store').value; const total = $('audit-total').textContent;
+      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      load('AI đang phân tích...');
+      const r = await callAI(`Cửa hàng ${store} vừa audit ${total}/100. Đưa action plan 5 bước cụ thể để cải thiện trong 15 ngày. Ngắn gọn.`);
+      unload(); $('action-plan').value = r; toast('🤖 AI đã đề xuất action plan!');
     }
 
-    async function submitAudit() {
-        const store = document.getElementById('aud-store-select').value;
-        const total = Number(document.getElementById('aud-total-score').textContent);
-        
-        const scores = {};
-        document.querySelectorAll('.aud-score-input').forEach(input => {
-            scores[input.dataset.id] = Number(input.value);
-        });
-
-        showToast('Saving audit...');
-        const res = await api('saveAudit', {
-            store,
-            score: total,
-            type: document.getElementById('aud-type').value,
-            actionPlan: document.getElementById('aud-note').value,
-            scores
-        });
-
-        if (res.ok) {
-            showToast('✅ Đã lưu kết quả Audit!');
-            closeModal('modal-audit');
-            syncAll();
-        } else {
-            showToast('❌ Lỗi: ' + res.error, 'red');
-        }
+    function viewAuditReport(store, score) {
+      const sel = $('rpt-audit-store');
+      for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].value === store || sel.options[i].text === store) { sel.selectedIndex = i; break; } }
+      showAuditTab('report', document.querySelectorAll('.ptab')[3]);
+      genAuditReport();
     }
 
-    // ── PLANNING ──
+    function genAuditReport() {
+      const store = $('rpt-audit-store').value || $('rpt-audit-store').options[$('rpt-audit-store').selectedIndex]?.text;
+      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      const type = $('rpt-audit-type').value;
+      const entry = D.auditList.find(a => a.name === store) || D.secretList.find(a => a.store === store) || { score: 0, date: '–' };
+      const score = entry.score || 0;
+      const today = new Date().toLocaleDateString('vi-VN');
+      const status = score >= 85 ? 'ĐẠT TIÊU CHUẨN' : score >= 70 ? 'CẦN TÁI AUDIT' : 'DƯỚI TIÊU CHUẨN – KHẨN CẤP';
+      auditReportText = `BIÊN BẢN AUDIT – ${type.toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cửa hàng     : ${store}
+Loại audit   : ${type}
+Ngày audit   : ${entry.date || today}
+Ngày lập     : ${today}
+Người thực hiện: Dương Thanh Liêm – Operations Leader
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 KẾT QUẢ TỔNG ĐIỂM: ${score}/100
+Trạng thái   : ${status}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${score < 85 ? `⚠️ ĐIỂM CẦN CẢI THIỆN:
+• Tái audit trong vòng 15 ngày
+• Lên action plan chi tiết từng tiêu chí yếu
+• Trưởng ca giám sát hàng ngày
+• Báo cáo cải tiến sau 7 ngày`: `✅ GHI NHẬN THÀNH TÍCH:
+• Duy trì kết quả hiện tại
+• Chia sẻ best practice toàn hệ thống
+• Chuẩn bị cho audit kỳ tiếp theo`}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ACTION PLAN (hoàn thành trong 48h):
+${score < 85 ? '1. Họp nhân viên phổ biến kết quả trong 24h\n2. Lên lịch tái audit trong 15 ngày\n3. Trưởng ca giám sát hàng ngày\n4. Báo cáo tiến độ cải tiến sau 7 ngày' : '1. Ghi nhận & khen thưởng nhân viên\n2. Duy trì tiêu chuẩn\n3. Chia sẻ kết quả tốt toàn hệ thống'}
+
+Người lập: Dương Thanh Liêm · Operations Leader · ${today}
+Xác nhận: ___________________________`;
+      $('audit-report-pre').textContent = auditReportText;
+      $('audit-report-pre').style.color = 'var(--brown)';
+      $('btn-copy-audit').style.display = '';
+      $('btn-send-audit').style.display = '';
+      $('ae-body').value = auditReportText;
+      $('ae-subject').value = `Biên bản Audit ${type} – ${store}`;
+    }
+
+    async function aiGenAuditReport() {
+      const store = $('rpt-audit-store').value;
+      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      const entry = D.auditList.find(a => a.name === store) || { score: 0 };
+      load('AI đang soạn biên bản...');
+      const r = await callAI(`Soạn biên bản audit cho ${store}, điểm ${entry.score}/100. Bao gồm kết quả từng nhóm tiêu chí, nhận xét chi tiết, action plan cụ thể có deadline. Chuyên nghiệp.`);
+      unload(); auditReportText = r;
+      $('audit-report-pre').textContent = r; $('audit-report-pre').style.color = 'var(--brown)';
+      $('btn-copy-audit').style.display = ''; $('btn-send-audit').style.display = '';
+      $('ae-body').value = r;
+      toast('🤖 AI đã soạn biên bản!');
+    }
+
+    function openAuditEmailModal() { openModal('modal-audit-email'); }
+    async function sendAuditEmail() {
+      const to = $('ae-to').value.trim();
+      if (!to) { toast('⚠️ Nhập email', 'twarn'); return; }
+      const schedule = $('ae-schedule').value;
+      load('Đang gửi...');
+      const action = schedule ? 'scheduleEmail' : 'sendEmail';
+      const res = await api({ action, to, subject: $('ae-subject').value, body: $('ae-body').value, scheduledTime: schedule || undefined });
+      unload();
+      if (res.ok) { toast('✅ ' + (schedule ? 'Đã lên lịch gửi' : 'Đã gửi biên bản!')); closeModal('modal-audit-email'); }
+      else toast('❌ ' + res.error, 'terr');
+    }
+
+    function exportAuditData() {
+      if (!D.auditList.length) { toast('Không có dữ liệu', 'twarn'); return; }
+      const rows = [['Cửa hàng', 'Điểm', 'Ngày', 'Trạng thái', 'Ghi chú']];
+      D.auditList.forEach(a => rows.push([a.name, a.score, a.date, a.score >= 85 ? 'Đạt' : 'Tái audit', a.note]));
+      exportXLSX(rows, 'KetQuaAudit');
+    }
+    function exportAuditReport() {
+      if (!auditReportText) { toast('Tạo biên bản trước', 'twarn'); return; }
+      const rows = auditReportText.split('\n').map(line => [line]);
+      exportXLSX(rows, 'BienBanAudit');
+    }
+
+    async function aiSecretAnalysis() {
+      load('AI đang phân tích...');
+      const ctx = D.secretList.slice(0, 10).map(a => `${a.store}: ${a.score}đ – ${a.comment}`).join('\n');
+      const r = await callAI(`Phân tích kết quả audit khách hàng bí ẩn:\n${ctx || '(Chưa có dữ liệu)'}\nĐề xuất cải thiện trải nghiệm khách hàng.`);
+      unload(); $('secret-ai').innerHTML = r.replace(/\n/g, '<br>'); $('secret-ai').style.color = 'var(--brown)';
+    }
+
+    // ════════════════════════════════════════
+    //  STAFF / HR
+    // ════════════════════════════════════════
+    let _allStaff = [];
+    async function loadStaff() {
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getStaff', showAll: 'true' });
+      if (data.ok) {
+        _allStaff = data.staff || [];
+        // Update position filter
+        const positions = [...new Set(_allStaff.map(s => s.position).filter(Boolean))];
+        const fp = $('fns-position');
+        const curp = fp.value;
+        fp.innerHTML = '<option value="all">Tất cả chức danh</option>' + positions.map(p => `<option value="${p}"${p === curp ? ' selected' : ''}>${p}</option>`).join('');
+        filterStaff();
+        loadPendingStaff();
+      }
+    }
+    function filterStaff() {
+      const pos = $('fns-position').value, store = $('fns-store').value;
+      const role = $('fns-role').value, status = $('fns-status').value;
+      const search = ($('fns-search').value || '').toLowerCase();
+      let list = [..._allStaff];
+      if (status !== 'all') list = list.filter(s => s.status === status);
+      else list = list.filter(s => s.status !== 'Đã ngưng cộng tác');
+      if (pos !== 'all') list = list.filter(s => s.position === pos);
+      if (store !== 'all') list = list.filter(s => s.store === store);
+      if (role !== 'all') list = list.filter(s => s.role === role);
+      if (search) list = list.filter(s => (s.name + s.email + s.position).toLowerCase().includes(search));
+      renderStaffGrid(list);
+    }
+    function renderStaffGrid(list) {
+      const grid = $('staff-grid');
+      if (!list.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="ei">👥</div>Không có nhân viên phù hợp</div>'; return; }
+      grid.innerHTML = list.map(s => {
+        const initials = (s.name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+        return `<div class="staff-card" onclick="editStaff('${s.id}')">
+      <div class="staff-av">${s.avatar ? `<img src="${s.avatar}" alt="">` : `<span>${initials}</span>`}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">${s.position || '–'} · <code style="font-size:10px">${s.id || '–'}</code></div>
+        <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${roleBadge(s.role)} <span class="bdg ${s.status === 'Đang cộng tác' ? 'bg2' : s.status === 'Tạm ngưng' ? 'by2' : 'br2'}">${s.status || '–'}</span></div>
+      </div>
+    </div>`;
+      }).join('');
+
+      // Training section from latest plan
+      if (D.plans.length > 0) {
+        const plan = D.plans[0];
+        const content = (plan.content && typeof plan.content === 'object') ? JSON.stringify(plan.content) : String(plan.content || '');
+        $('training-month-label').textContent = plan.month || '';
+        $('training-section').innerHTML = `
+      <div class="alert ab" style="margin-bottom:10px">📚 <span>Đào tạo từ kế hoạch <strong>${plan.month || '–'}</strong>. Ngân sách: ${plan.budget || 0}tr</span></div>
+      <div style="font-size:13px;color:var(--brown);line-height:1.8;white-space:pre-wrap">${content}</div>`;
+      }
+    }
+
+    function openStaffModal(data) {
+      currentStaffEdit = null;
+      ['sf-id', 'sf-name', 'sf-phone', 'sf-email', 'sf-position', 'sf-store', 'sf-note'].forEach(id => { $(id).value = id === 'sf-store' ? 'Hệ Thống' : ''; });
+      ['sf-dob', 'sf-start'].forEach(id => { $(id).value = ''; });
+      $('sf-gender').value = 'Nam'; $('sf-role').value = 'User'; $('sf-status').value = 'Đang cộng tác'; $('sf-pw').value = '';
+      $('staff-modal-title').textContent = '+ Thêm nhân viên';
+      openModal('modal-staff');
+    }
+    function editStaff(id) {
+      const s = _allStaff.find(x => x.id === id); if (!s) return;
+      currentStaffEdit = s;
+      $('sf-id').value = s.id || ''; $('sf-name').value = s.name || '';
+      $('sf-phone').value = s.phone || ''; $('sf-email').value = s.email || '';
+      $('sf-gender').value = s.gender || 'Nam'; $('sf-position').value = s.position || '';
+      $('sf-store').value = s.store || 'Hệ Thống'; $('sf-role').value = s.role || 'User';
+      $('sf-status').value = s.status || 'Đang cộng tác'; $('sf-note').value = s.note || '';
+      $('sf-pw').value = '';
+      if (s.dob) $('sf-dob').value = s.dob.split('/').reverse().join('-');
+      if (s.startDate) $('sf-start').value = s.startDate.split('/').reverse().join('-');
+      $('staff-modal-title').textContent = '✏️ Sửa: ' + s.name;
+      openModal('modal-staff');
+    }
+    async function saveStaffForm() {
+      const name = $('sf-name').value.trim(), email = $('sf-email').value.trim();
+      if (!name || !email) { toast('⚠️ Nhập họ tên và email', 'twarn'); return; }
+      let id = $('sf-id').value.trim();
+      if (!id) {
+        const max = _allStaff.reduce((m, s) => { const n = parseInt((s.id || '').replace(/\D/g, '')) || 0; return n > m ? n : m; }, 0);
+        id = `NSHT000_${String(max + 1).padStart(2, '0')}`;
+      }
+      load('Đang lưu nhân viên...');
+      const d = {
+        id, name, phone: $('sf-phone').value, email,
+        gender: $('sf-gender').value, dob: $('sf-dob').value,
+        startDate: $('sf-start').value, position: $('sf-position').value,
+        store: $('sf-store').value || 'Hệ Thống', role: $('sf-role').value,
+        status: $('sf-status').value, note: $('sf-note').value,
+        password: $('sf-pw').value || undefined, avatar: currentStaffEdit?.avatar || ''
+      };
+      const res = await api({ action: 'saveStaff', data: d });
+      unload();
+      if (res.ok) { toast('✅ Đã lưu: ' + name); closeModal('modal-staff'); await loadStaff(); }
+      else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+    }
+
+    async function loadPendingStaff() {
+      const data = await api({ action: 'getPendingStaff' });
+      if (data.ok && data.pending && data.pending.length) {
+        $('pending-section').style.display = 'block';
+        $('pending-list').innerHTML = data.pending.map(p => `
+      <div class="card" style="margin-bottom:8px">
+        <div class="cb" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="flex:1"><strong>${p.name}</strong> · ${p.email} · ${p.position || '–'}</div>
+          <div><span class="bdg by2">Chờ duyệt</span> · ${p.regDate || ''}</div>
+          <button class="btn bp bsm" onclick="approveStaff('${p.email}')">✅ Duyệt</button>
+        </div>
+      </div>`).join('');
+      } else $('pending-section').style.display = 'none';
+    }
+    async function approveStaff(email) {
+      load('Đang duyệt...');
+      const res = await api({ action: 'approveStaff', email });
+      unload();
+      if (res.ok) { toast('✅ Đã duyệt!'); await loadStaff(); }
+      else toast('❌ ' + res.error, 'terr');
+    }
+
+    function updateProfile() {
+      const pw = $('p-newpw').value.trim();
+      if (!pw) { toast('Nhập mật khẩu mới', 'twarn'); return; }
+      api({ action: 'updatePassword', email: 'duongthanhliem@phuctea.com.vn', newPassword: pw })
+        .then(r => { if (r.ok) { toast('✅ Đã cập nhật mật khẩu'); $('p-newpw').value = ''; } else toast('❌ ' + r.error, 'terr'); });
+    }
+
+    // ════════════════════════════════════════
+    //  PLANS
+    // ════════════════════════════════════════
     async function loadPlans() {
-        const res = await api('getPlans');
-        if (res.ok) {
-            D.plans = res.plans;
-            renderPlansTable();
-        }
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getPlans' });
+      if (!data.ok) return;
+      D.plans = data.plans || [];
+      const sel = $('plan-history-sel'), ref = $('rpt-plan-ref');
+      sel.innerHTML = '<option value="">-- Xem kế hoạch cũ --</option>';
+      ref.innerHTML = '<option value="">-- Không so sánh --</option>';
+      D.plans.forEach(p => {
+        sel.innerHTML += `<option value="${p.id}">${p.month || p.id} – CH:${p.targetStores} Audit:${p.targetAudit}</option>`;
+        ref.innerHTML += `<option value="${p.id}">${p.month || p.id}</option>`;
+      });
+      // History table
+      $('plan-history-body').innerHTML = D.plans.length ? D.plans.map(p => `<tr>
+    <td>${p.month || '–'}</td>
+    <td>${p.targetStores || 0}</td>
+    <td>${p.targetAudit || 85}</td>
+    <td>${p.budget || 0}tr</td>
+    <td><span class="bdg bg2">${p.status || '–'}</span></td>
+    <td style="font-size:11px">${p.timestamp || '–'}</td>
+    <td><button class="btn bo bsm" onclick="loadPlanById('${p.id}')">Xem</button></td>
+  </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state" style="padding:12px">Chưa có kế hoạch</div></td></tr>';
     }
 
-    function renderPlansTable() {
-        const body = document.getElementById('plans-body');
-        body.innerHTML = D.plans.map(p => `
-            <tr>
-                <td><strong>${p.month}</strong></td>
-                <td>${p.title}</td>
-                <td>${p.targetStores}</td>
-                <td>${p.targetAudit}</td>
-                <td><span class="badge ${p.status === 'Đã duyệt' ? 'badge-green' : 'badge-gold'}">${p.status}</span></td>
-                <td>
-                    <button class="btn btn-outline" style="padding: 4px 8px" onclick="editPlan('${p.id}')">Xem/Sửa</button>
-                </td>
-            </tr>
-        `).join('');
+    function loadPlanById(id) {
+      const plan = D.plans.find(p => p.id === id); if (!plan) return;
+      $('plan-month').value = plan.month || '';
+      $('plan-title').value = plan.title || '';
+      $('plan-target-stores').value = plan.targetStores || 0;
+      $('plan-target-audit').value = plan.targetAudit || 85;
+      $('plan-budget').value = plan.budget || 0;
+      $('plan-note').value = plan.note || '';
+      const content = typeof plan.content === 'object' ? JSON.stringify(plan.content, null, 2) : String(plan.content || '');
+      $('plan-content').value = content;
+      genPlanPreview(plan);
+      $('plan-id-label').textContent = 'ID: ' + plan.id;
+      goPage('kehoach', document.querySelectorAll('.ntab')[5]);
     }
 
-    function openPlanModal() {
-        document.getElementById('pl-month').value = '';
-        document.getElementById('pl-title').value = '';
-        document.getElementById('plan-tasks-container').innerHTML = '';
-        addPlanTaskRow();
-        openModal('modal-plan');
-    }
+    function genPlanPreview(p) {
+      const month = p.month || $('plan-month').value;
+      const content = $('plan-content').value || '';
+      planText = `[Operations – Dương Thanh Liêm] – Kế hoạch Tháng ${month} & Báo cáo kết quả Tháng ${month}
 
-    function addPlanTaskRow(task = '', deadline = '', owner = '') {
-        const cont = document.getElementById('plan-tasks-container');
-        const div = document.createElement('div');
-        div.className = 'f-grid';
-        div.style.gridTemplateColumns = '1fr 120px 100px 40px';
-        div.style.marginBottom = '8px';
-        div.innerHTML = `
-            <input type="text" class="f-input pl-task-name" placeholder="Công việc lớn/nhỏ..." value="${task}">
-            <input type="text" class="f-input pl-task-date" placeholder="Deadline" value="${deadline}">
-            <input type="text" class="f-input pl-task-node" placeholder="Người PT" value="${owner}">
-            <button class="btn" style="color:var(--red)" onclick="this.parentElement.remove()">✕</button>
-        `;
-        cont.appendChild(div);
+Kính gửi Anh Tài, Anh Vũ, Chị Yến và Bộ phận HR,
+
+Em xin gửi kế hoạch công việc ${month} của bộ phận Operations để xem xét và phê duyệt.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 MỤC TIÊU THÁNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Khai trương mới: ${$('plan-target-stores').value || 0} cửa hàng
+• Điểm audit mục tiêu: ≥${$('plan-target-audit').value || 85}/100
+• Ngân sách dự kiến: ${$('plan-budget').value || 0} triệu đồng
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 NỘI DUNG KẾ HOẠCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${content}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ghi chú: ${$('plan-note').value || '–'}
+
+Trân trọng,
+Dương Thanh Liêm · Operations Leader
+📞 0357 636 539 · operations@phuctea.com.vn
+${new Date().toLocaleDateString('vi-VN')}`;
+      $('plan-preview').textContent = planText;
+      $('plan-preview').style.color = 'var(--brown)';
     }
 
     async function savePlan() {
-        const tasks = [];
-        document.querySelectorAll('#plan-tasks-container .f-grid').forEach(row => {
-            tasks.push({
-                task: row.querySelector('.pl-task-name').value,
-                deadline: row.querySelector('.pl-task-date').value,
-                owner: row.querySelector('.pl-task-node').value
-            });
-        });
-
-        const data = {
-            month: document.getElementById('pl-month').value,
-            title: document.getElementById('pl-title').value,
-            targetStores: document.getElementById('pl-target-ch').value,
-            targetAudit: document.getElementById('pl-target-aud').value,
-            budget: document.getElementById('pl-budget').value,
-            tasks
-        };
-
-        const res = await api('savePlan', data);
-        if (res.ok) {
-            showToast('✅ Đã lưu kế hoạch');
-            closeModal('modal-plan');
-            loadPlans();
+      const month = $('plan-month').value.trim();
+      if (!month) { toast('⚠️ Nhập tháng kế hoạch', 'twarn'); return; }
+      genPlanPreview({});
+      load('Đang lưu kế hoạch...');
+      const res = await api({
+        action: 'savePlan', data: {
+          month, title: $('plan-title').value,
+          targetStores: Number($('plan-target-stores').value) || 0,
+          targetAudit: Number($('plan-target-audit').value) || 85,
+          budget: Number($('plan-budget').value) || 0,
+          content: $('plan-content').value,
+          note: $('plan-note').value, status: 'Đã lưu'
         }
+      });
+      unload();
+      if (res.ok) { toast('✅ Đã lưu kế hoạch!'); await loadPlans(); }
+      else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
     }
 
-    // ── REPORTS ──
+    async function aiGenPlan() {
+      load('AI đang phân tích & lập kế hoạch...');
+      const ctx = D.plans.length ? `Kế hoạch tháng trước:\n` + JSON.stringify(D.plans[0].content) : 'Chưa có kế hoạch trước.';
+      const kpi = `Hiện tại: ${D.kpi.stores} CH hoạt động, audit TB ${D.kpi.auditAvg}, ${D.kpi.reauditCount} cần tái audit.`;
+      const r = await callAI(`${kpi}\n${ctx}\n\nLập kế hoạch Operations tháng tới cho BOD Phúc Tea. Bao gồm: OKR, nhóm công việc chính (setup, audit, đào tạo), rủi ro & giải pháp, KPI. Chuyên nghiệp, có số liệu cụ thể.`, 'Lập kế hoạch chiến lược vận hành.');
+      unload();
+      $('plan-content').value = r;
+      genPlanPreview({});
+      toast('🤖 AI đã lập kế hoạch!');
+    }
+
+    function exportPlan() {
+      if (!planText) { genPlanPreview({}); }
+      const rows = planText.split('\n').map(l => [l]);
+      exportXLSX(rows, `KeHoach_${$('plan-month').value.replace(/\//g, '_')}`);
+    }
+
+    // ════════════════════════════════════════
+    //  REPORTS
+    // ════════════════════════════════════════
     async function loadReports() {
-        const res = await api('getReports');
-        if (res.ok) {
-            D.reports = res.reports;
-            renderReportsTable();
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getReports' });
+      if (!data.ok) return;
+      D.reports = data.reports || [];
+      const sel = $('report-history-sel');
+      sel.innerHTML = '<option value="">-- Xem báo cáo cũ --</option>';
+      D.reports.forEach(r => sel.innerHTML += `<option value="${r.id}">${r.month || r.id} – CH:${r.actualStores} Audit:${r.actualAudit}</option>`);
+      $('report-history-body').innerHTML = D.reports.length ? D.reports.map(r => `<tr>
+    <td>${r.month || '–'}</td>
+    <td>${r.actualStores || 0}</td>
+    <td style="color:${scoreColor(r.actualAudit || 0)};font-weight:700">${r.actualAudit || 0}/100</td>
+    <td>${r.budgetUsed || 0}tr</td>
+    <td><span class="bdg bg2">${r.status || '–'}</span></td>
+    <td style="font-size:11px">${r.timestamp || '–'}</td>
+    <td><button class="btn bo bsm" onclick="loadReportById('${r.id}')">Xem</button></td>
+  </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state" style="padding:12px">Chưa có báo cáo</div></td></tr>';
+    }
+
+    function loadReportById(id) {
+      const r = D.reports.find(x => x.id === id); if (!r) return;
+      $('rpt-month').value = r.month || '';
+      $('rpt-actual-stores').value = r.actualStores || 0;
+      $('rpt-actual-audit').value = r.actualAudit || 0;
+      $('rpt-budget-used').value = r.budgetUsed || 0;
+      const c = typeof r.content === 'object' ? r.content : {};
+      $('rpt-highlight').value = c.highlight || '';
+      $('rpt-challenge').value = c.challenge || '';
+      $('rpt-audit-cnt').value = c.auditCount || 0;
+      const planSel = $('rpt-plan-ref');
+      if (r.planId) { for (let i = 0; i < planSel.options.length; i++) { if (planSel.options[i].value === r.planId) { planSel.selectedIndex = i; break; } } }
+      genReport();
+      goPage('baocao', document.querySelectorAll('.ntab')[6]);
+    }
+
+    function genReport() {
+      const month = $('rpt-month').value.trim();
+      const actualStores = Number($('rpt-actual-stores').value) || 0;
+      const actualAudit = Number($('rpt-actual-audit').value) || 0;
+      const budgetUsed = Number($('rpt-budget-used').value) || 0;
+      const highlight = $('rpt-highlight').value || '(Chưa nhập)';
+      const challenge = $('rpt-challenge').value || '(Chưa nhập)';
+      const auditCnt = Number($('rpt-audit-cnt').value) || 0;
+      // Compare with plan
+      const planId = $('rpt-plan-ref').value;
+      const plan = D.plans.find(p => p.id === planId);
+      let compareSection = '';
+      if (plan) {
+        compareSection = `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 SO SÁNH VỚI KẾ HOẠCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Khai trương: TH ${actualStores} / KH ${plan.targetStores || '–'} ${actualStores >= (plan.targetStores || 0) ? '✅' : '⚠️'}
+• Điểm audit: TH ${actualAudit}/100 / KH ≥${plan.targetAudit || 85} ${actualAudit >= (plan.targetAudit || 85) ? '✅' : '⚠️'}
+• Ngân sách: Đã dùng ${budgetUsed}tr / KH ${plan.budget || 0}tr\n`;
+      }
+      reportText = `[Operations – Dương Thanh Liêm] – Kế hoạch Tháng ${month} & Báo cáo kết quả Tháng ${month}
+
+Kính gửi Anh Tài, Anh Vũ, Chị Yến và Bộ phận HR,
+
+Em xin gửi báo cáo kết quả thực hiện kế hoạch ${month} của bộ phận Operations.${compareSection}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 KẾT QUẢ THỰC HIỆN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Cửa hàng khai trương: ${actualStores} cửa hàng
+• Điểm audit TB hệ thống: ${actualAudit}/100
+• Số lượt audit: ${auditCnt}
+• Ngân sách đã dùng: ${budgetUsed} triệu đồng
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ THÀNH TỰU NỔI BẬT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${highlight}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ THÁCH THỨC & KẾ HOẠCH TIẾP THEO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${challenge}
+
+Trân trọng,
+Dương Thanh Liêm · Operations Leader
+📞 0357 636 539 · operations@phuctea.com.vn
+${new Date().toLocaleDateString('vi-VN')}`;
+      $('report-preview').textContent = reportText;
+      $('report-preview').style.color = 'var(--brown)';
+      $('btn-copy-rpt').style.display = '';
+      toast('✅ Báo cáo đã tạo!');
+    }
+
+    async function saveReport() {
+      const month = $('rpt-month').value.trim();
+      if (!month) { toast('⚠️ Nhập tháng báo cáo', 'twarn'); return; }
+      genReport();
+      load('Đang lưu báo cáo...');
+      const res = await api({
+        action: 'saveReport', data: {
+          month, actualStores: Number($('rpt-actual-stores').value) || 0,
+          actualAudit: Number($('rpt-actual-audit').value) || 0,
+          budgetUsed: Number($('rpt-budget-used').value) || 0,
+          planId: $('rpt-plan-ref').value || '',
+          content: { highlight: $('rpt-highlight').value, challenge: $('rpt-challenge').value, auditCount: $('rpt-audit-cnt').value },
+          status: 'Đã gửi BOD'
         }
+      });
+      unload();
+      if (res.ok) { toast('✅ Đã lưu báo cáo!'); await loadReports(); }
+      else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
     }
 
-    function renderReportsTable() {
-        const body = document.getElementById('reports-body');
-        body.innerHTML = D.reports.map(r => `
-            <tr>
-                <td><strong>${r.month}</strong></td>
-                <td>${r.actualStores} CH</td>
-                <td><span style="color:${scoreColor(r.actualAudit)}; font-weight:700">${r.actualAudit}</span></td>
-                <td>${r.budgetUsed} tr</td>
-                <td><span class="badge badge-green">${r.status}</span></td>
-                <td><button class="btn btn-outline" style="padding: 4px 8px">Chi tiết</button></td>
-            </tr>
-        `).join('');
+    async function aiGenReport() {
+      load('AI đang soạn báo cáo...');
+      const month = $('rpt-month').value || 'tháng này';
+      const r = await callAI(`Soạn báo cáo kết quả thực hiện kế hoạch ${month} cho BOD Phúc Tea (Anh Lý Tấn Tài). Kết quả: ${$('rpt-actual-stores').value || 0} CH khai trương, audit TB ${$('rpt-actual-audit').value || 0}/100. Chuyên nghiệp, trang trọng.`);
+      unload();
+      reportText = r;
+      $('report-preview').textContent = r; $('report-preview').style.color = 'var(--brown)';
+      $('btn-copy-rpt').style.display = '';
+      $('em-body').value = r;
+      toast('🤖 AI đã soạn báo cáo!');
     }
 
-    // ── MODAL UTILS ──
-    function openModal(id) {
-        const m = document.getElementById(id);
-        m.style.display = 'flex';
-        setTimeout(() => m.querySelector('.modal').classList.add('open'), 10);
-    }
-    function closeModal(id) {
-        const m = document.getElementById(id);
-        m.querySelector('.modal').classList.remove('open');
-        setTimeout(() => m.style.display = 'none', 300);
+    function exportReport() {
+      if (!reportText) { genReport(); }
+      const rows = reportText.split('\n').map(l => [l]);
+      exportXLSX(rows, `BaoCao_${$('rpt-month').value.replace(/\//g, '_')}`);
     }
 
-    // ── UI UTILS ──
-    function showToast(msg, color = 'brown') {
-        const cont = document.getElementById('toast-container');
-        const t = document.createElement('div');
-        t.className = 'toast';
-        if (color === 'red') t.style.background = '#E53E3E';
-        t.textContent = msg;
-        cont.appendChild(t);
-        setTimeout(() => t.remove(), 4000);
+    // ════════════════════════════════════════
+    //  EMAIL
+    // ════════════════════════════════════════
+    function openEmailModal(mode) {
+      emailMode = mode;
+      const month = mode === 'plan' ? $('plan-month').value : $('rpt-month').value;
+      $('email-modal-title').textContent = mode === 'plan' ? '✉️ Gửi Kế hoạch BOD' : '✉️ Gửi Báo cáo BOD';
+      $('em-subject').value = `[Operations – Dương Thanh Liêm] – Kế hoạch Tháng ${month} & Báo cáo kết quả Tháng ${month}`;
+      $('em-body').value = mode === 'plan' ? planText : reportText;
+      $('em-thread').value = '';
+      openModal('modal-email');
+    }
+    async function sendEmailNow() {
+      const to = $('em-to').value.trim(), subj = $('em-subject').value.trim(), body = $('em-body').value.trim();
+      if (!to || !subj || !body) { toast('⚠️ Điền đầy đủ thông tin', 'twarn'); return; }
+      load('Đang gửi email...');
+      const threadId = $('em-thread').value.trim() || undefined;
+      const res = await api({ action: 'sendEmail', to, subject: subj, body, cc: $('em-cc').value, threadId });
+      unload();
+      if (res.ok) {
+        toast('✅ Email đã gửi!');
+        closeModal('modal-email');
+        // Auto save report/plan after send
+        if (emailMode === 'plan') savePlan();
+        else saveReport();
+      } else toast('❌ ' + (res.error || 'Lỗi gửi'), 'terr');
+    }
+    async function scheduleEmail() {
+      const scheduledTime = $('em-schedule').value;
+      if (!scheduledTime) { toast('⚠️ Chọn ngày giờ hẹn', 'twarn'); return; }
+      load('Đang lên lịch...');
+      const res = await api({ action: 'scheduleEmail', to: $('em-to').value, subject: $('em-subject').value, body: $('em-body').value, cc: $('em-cc').value, scheduledTime });
+      unload();
+      if (res.ok) { toast('✅ Email đã lên lịch!'); closeModal('modal-email'); }
+      else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+    }
+    async function aiRewriteEmail() {
+      const body = $('em-body').value;
+      if (!body) { toast('⚠️ Nhập nội dung email trước', 'twarn'); return; }
+      load('AI đang viết lại...');
+      const r = await callAI(`Viết lại email sau chuyên nghiệp, súc tích, trang trọng hơn. Giữ nguyên số liệu:\n\n${body}`, 'Viết email chuyên nghiệp tiếng Việt cho lãnh đạo doanh nghiệp.');
+      unload(); $('em-body').value = r; toast('🤖 AI đã viết lại!');
     }
 
-    function openConfig() {
-        document.getElementById('cfg-url').value = CFG.url;
-        openModal('modal-config');
+    // ════════════════════════════════════════
+    //  AI
+    // ════════════════════════════════════════
+    async function callAI(prompt, system = '') {
+      if (CFG.apiKey) {
+        try {
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': CFG.apiKey, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514', max_tokens: 1500,
+              system: 'Bạn là AI assistant vận hành Phúc Tea Cần Thơ. ' + (system || 'Trả lời tiếng Việt, ngắn gọn, thực tế.'),
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+          const data = await res.json();
+          if (data.content?.[0]?.text) return data.content[0].text;
+        } catch (_) { }
+      }
+      if (CFG.scriptUrl) {
+        const res = await api({ action: 'aiProxy', prompt, system });
+        if (res.ok && res.text) return res.text;
+      }
+      return '⚠️ Chưa cấu hình AI. Vào ⚙️ Cài đặt → nhập API Key hoặc Apps Script URL.';
     }
-    function saveConfig() {
-        const url = document.getElementById('cfg-url').value;
-        localStorage.setItem('phuc_tea_gas_url', url);
-        CFG.url = url;
-        closeModal('modal-config');
-        syncAll();
+
+    async function aiDashInsight() {
+      const box = $('ai-dash-box');
+      box.querySelector('.ait').textContent = 'AI đang phân tích...';
+      box.querySelector('.aii').textContent = 'Vui lòng chờ...'; box.querySelector('.aii').style.color = 'rgba(255,255,255,.5)';
+      const ctx = `${D.kpi.stores} CH hoạt động, ${D.kpi.newStores}/${D.kpi.targetStores} mục tiêu 2026, audit TB ${D.kpi.auditAvg}/100, ${D.kpi.reauditCount} cần tái audit.`;
+      const r = await callAI(ctx + ' Phân tích tình hình vận hành và đưa ra 3 ưu tiên hàng đầu. Bullet points, ngắn gọn.');
+      box.querySelector('.ait').textContent = '📊 AI Phân tích & Ưu tiên';
+      box.querySelector('.aii').innerHTML = r.replace(/\n/g, '<br>'); box.querySelector('.aii').style.color = 'rgba(255,255,255,.9)';
+    }
+
+    async function aiFullAnalysis() {
+      load('AI đang phân tích toàn hệ thống...');
+      const ctx = `${D.kpi.stores} CH, ${D.kpi.newStores}/${D.kpi.targetStores} mục tiêu, audit TB ${D.kpi.auditAvg}, ${D.kpi.reauditCount} tái audit.`;
+      const r = await callAI(ctx + ' Phân tích SWOT toàn bộ Operations Phúc Tea. Đề xuất chiến lược quý tới với số liệu cụ thể.');
+      unload();
+      const box = $('ai-main-box');
+      box.querySelector('.ait').textContent = '📊 Phân tích & Chiến lược';
+      box.querySelector('.aii').innerHTML = r.replace(/\n/g, '<br>');
+      const s = await callAI('Liệt kê 5 đề xuất cải tiến thực hiện ngay tuần này. Mỗi đề xuất 1 câu.');
+      $('ai-suggestions').innerHTML = s.split('\n').filter(l => l.trim()).map(l => `<div class="alert ag" style="margin-bottom:7px">✨ ${l.replace(/^\d+\.\s*/, '')}</div>`).join('');
+      toast('🤖 Phân tích hoàn thành!');
+    }
+
+    async function aiSuggestPlan() {
+      load('AI đang gợi ý kế hoạch...');
+      const r = await callAI(`Dựa trên kết quả hiện tại: ${D.kpi.stores} CH, audit TB ${D.kpi.auditAvg}/100. Gợi ý 5 điểm trọng tâm kế hoạch tháng tới cho Operations Phúc Tea.`);
+      unload();
+      $('ai-suggestions').innerHTML = `<div class="ai-box"><span class="aitag">💡 GỢI Ý KẾ HOẠCH</span><div class="ait">Tháng tới</div><div class="aii">${r.replace(/\n/g, '<br>')}</div></div>`;
     }
 
     async function askAI() {
-        showToast('🤖 AI đang phân tích dữ liệu hệ thống...');
-        // In a real app, this would call a tool or subagent. 
-        // For this demo/UI improvement, we'll simulate an insight.
-        setTimeout(() => {
-            const insights = [
-                "Cửa hàng Cần Thơ có điểm Audit giảm 5% so với tháng trước. Cần chú ý quy trình vệ sinh.",
-                "Tốc độ Setup đang đạt 110% mục tiêu. Có thể đẩy nhanh tiến độ khai trương CH045.",
-                "Dự báo tháng tới cần tăng 20% ngân sách đào tạo cho nhân viên mới."
-            ];
-            document.getElementById('ai-insight').innerHTML = `<strong>Phân tích từ AI:</strong><br>${insights[Math.floor(Math.random()*insights.length)]}`;
-        }, 2000);
+      const q = $('ai-q').value.trim(); if (!q) return;
+      $('ai-q').value = '';
+      const ms = $('ai-messages');
+      ms.innerHTML += `<div class="ai-msg ai-msg-user"><div class="ai-bbl">${q}</div></div>`;
+      ms.innerHTML += `<div class="ai-msg ai-msg-ai" id="ai-typing"><div class="ai-bbl" style="color:rgba(255,255,255,.4)">Đang suy nghĩ...</div></div>`;
+      ms.scrollTop = ms.scrollHeight;
+      const r = await callAI(q);
+      const t = $('ai-typing');
+      if (t) { t.querySelector('.ai-bbl').innerHTML = r.replace(/\n/g, '<br>'); t.removeAttribute('id'); }
+      ms.scrollTop = ms.scrollHeight;
+    }
+    function quickAsk(q) { $('ai-q').value = q; goPage('ai', document.querySelectorAll('.ntab')[7]); setTimeout(askAI, 80); }
+
+    // ════════════════════════════════════════
+    //  EXCEL EXPORT
+    // ════════════════════════════════════════
+    function exportXLSX(rows, filename) {
+      try {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        XLSX.writeFile(wb, filename + '.xlsx');
+        toast('📥 Đã xuất ' + filename + '.xlsx');
+      } catch (e) { toast('❌ Lỗi xuất Excel: ' + e.message, 'terr'); }
     }
 
-    init();
-</script>
+    // ════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════
+    (function init() {
+      // Greeting & date
+      const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const now = new Date();
+      $('greeting').textContent = getH() + ', Liêm 👋';
+      $('today-str').textContent = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} · Mục tiêu 2026: 30 cửa hàng mới`;
+      const ad = $('audit-date'); if (ad) ad.value = now.toISOString().split('T')[0];
+
+      // Sheet link
+      if (CFG.sheetId) $('sheet-link').href = `https://docs.google.com/spreadsheets/d/${CFG.sheetId}`;
+
+      // Start sync or show config alert
+      if (CFG.scriptUrl) { $('cfg-alert').style.display = 'none'; syncAll(); }
+      else { $('cfg-alert').style.display = 'flex'; setSyncStatus(false, 'Chưa cấu hình'); toast('👋 Chào mừng! Nhấn ⚙️ Cài đặt để kết nối Google Sheets.', 'twarn'); }
+
+      // Default audit criteria while loading
+      setTimeout(() => {
+        if (!D.auditCriteria.length && $('audit-criteria-container').innerHTML.includes('Đang tải'))
+          $('audit-criteria-container').innerHTML = '<div class="empty-state" style="padding:12px">Đồng bộ để tải tiêu chí</div>';
+      }, 3000);
+    })();
+  </script>
 </body>
+
 </html>

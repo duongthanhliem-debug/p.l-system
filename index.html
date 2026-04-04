@@ -2540,36 +2540,34 @@
     // ════════════════════════════════════════
     //  SETUP
     // ════════════════════════════════════════
+    async function loadStaff() {
+      if (!CFG.scriptUrl) return;
+      const data = await api({ action: 'getStaff' });
+      if (data.ok) {
+        D.staffList = data.staff || [];
+        console.log('✅ Đã nạp STAFF:', D.staffList.length);
+      }
+    }
+
     async function loadSetupPage() {
       if (!CFG.scriptUrl) return;
-      load('Đang tải setup...');
-      // Load template
-      const tplData = await api({ action: 'getSetupTemplate' });
-      if (tplData.ok) D.template = tplData.template || [];
+      load('Đang tải dữ liệu setup...');
+      try {
+        await loadStaff(); // Nạp nhân sự trước
+        const tData = await api({ action: 'getSetupTemplate' });
+        if (tData.ok) D.template = tData.template || [];
 
-      // Build phase filter
-      const phases = [...new Set(D.template.map(t => t.phase).filter(Boolean))];
-      const phSel = $('setup-phase-filter');
-      phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>' + phases.map(p => `<option value="${p}">${p}</option>`).join('');
+        const phases = [...new Set(D.template.map(t => (t.phase || '').trim().toUpperCase()).filter(Boolean))];
+        const phSel = $('setup-phase-filter');
+        phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>' + phases.map(p => `<option value="${p}">${p}</option>`).join('');
 
-      // Load setup stores (from getSetupStores action)
-      const data = await api({ action: 'getSetupStores' });
-      if (data.ok) D.setupStores = data.setupStores || [];
+        const data = await api({ action: 'getSetupStores' });
+        if (data.ok) D.setupStores = data.setupStores || [];
+
+        $('setup-cnt').textContent = D.setupStores.length;
+        renderSetupList();
+      } catch (e) { toast('Lỗi: ' + e.message, 'terr'); }
       unload();
-
-      $('setup-cnt').textContent = D.setupStores.length;
-      $('target-2026').textContent = D.kpi.targetStores || 30;
-      const pct = D.kpi.targetStores ? Math.round((D.kpi.newStores || 0) / D.kpi.targetStores * 100) : 0;
-      $('target-sub').textContent = `${D.kpi.newStores || 0}/${D.kpi.targetStores || 30} (${pct}%)`;
-      $('kt-cnt').textContent = D.kpi.newStores || 0;
-
-      // Monthly plan KT
-      if (D.plans.length > 0) {
-        const plan = D.plans[0];
-        $('kt-plan').textContent = `KH tháng này: ${plan.targetStores || 0} CH · Q2: ${(plan.targetStores || 0) * 3} CH`;
-      }
-
-      renderSetupList();
     }
 
     function filterSetupPhase() {
@@ -2589,7 +2587,11 @@
     }
 
     function staffOpt(current) {
-      return (D.staffList || []).map(s => `<option value="${s.name}" ${s.name === current ? 'selected' : ''}>${s.name}</option>`).join('');
+      let h = '<option value="">-- Chọn nhân sự --</option>';
+      const sList = (D.staffList || []);
+      if (sList.length) h += sList.map(s => `<option value="${s.name}" ${s.name === current ? 'selected' : ''}>${s.name}</option>`).join('');
+      if (current && !sList.some(s => s.name === current)) h += `<option value="${current}" selected>${current}</option>`;
+      return h;
     }
 
     function renderSetupList() {
@@ -2752,11 +2754,22 @@
       if (!openStr) return { s: '', e: '' };
       try {
         let p = openStr.includes('/') ? openStr.split('/').reverse() : openStr.split('-');
-        const d = new Date(p[0], p[1] - 1, p[2]);
+        if (p[0].length < 4) { // Dạng DD/MM/YYYY
+          p = [p[2], p[1], p[0]]; // Đảo lại thành YYYY, MM, DD
+        }
+        const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
         if (isNaN(d.getTime())) return { s: '', e: '' };
+
+        // Tính toán dựa trên độ lệch (delta)
         let ds = new Date(d); ds.setDate(d.getDate() + (dS || 0));
         let de = new Date(d); de.setDate(d.getDate() + (dE || 0));
-        return { s: ds.toISOString().split('T')[0], e: de.toISOString().split('T')[0] };
+
+        // Định dạng YYYY-MM-DD cho input type="date"
+        const pad = (n) => String(n).padStart(2, '0');
+        return {
+          s: `${ds.getFullYear()}-${pad(ds.getMonth() + 1)}-${pad(ds.getDate())}`,
+          e: `${de.getFullYear()}-${pad(de.getMonth() + 1)}-${pad(de.getDate())}`
+        };
       } catch (e) { return { s: '', e: '' }; }
     }
 
@@ -2773,7 +2786,20 @@
 
       const si = parseInt(sid.replace('s_', ''));
       const s = D.setupStores[si] || {};
-      const dates = t.startDelta !== undefined ? getTaskDates(t.startDelta, t.endDelta, s.openDate) : { s: t.startDate || '', e: t.deadline || '' };
+
+      // Nếu là task nạp từ sheet (t.startDate có giá trị) thì nạp ngày đó, 
+      // nếu là task mới/từ template (t.startDelta có giá trị) thì tính theo delta
+      let dates = { s: '', e: '' };
+      if (t.startDelta !== undefined) {
+        dates = getTaskDates(t.startDelta, t.endDelta, s.openDate);
+      } else {
+        const toISO = (dStr) => {
+          if (!dStr) return '';
+          let p = dStr.split('/'); if (p.length < 3) return dStr;
+          return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        };
+        dates = { s: toISO(t.startDate), e: toISO(t.deadline) };
+      }
 
       tr.innerHTML = `
         <td style="text-align:center"><input class="fc t-id" value="${t.id || ''}" style="padding:2px;font-size:10px;text-align:center"></td>

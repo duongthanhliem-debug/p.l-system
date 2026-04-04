@@ -2553,7 +2553,10 @@
         
         const phases = [...new Set(D.template.map(t => (t.phase || '').trim().toUpperCase()).filter(Boolean))];
         const phSel = $('setup-phase-filter');
-        if (phSel) phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>' + phases.map(p => `<option value="${p}">${p}</option>`).join('');
+        if (phSel) {
+          phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>' + phases.map(p => `<option value="${p}">${p}</option>`).join('');
+          phSel.onchange = () => renderSetupList();
+        }
 
         const data = await api({ action: 'getSetupStores' });
         if (data.ok) { 
@@ -2577,7 +2580,7 @@
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
             <div>
               <div style="font-weight:700;font-size:17px;color:var(--text)">${s.name}</div>
-              <div style="font-size:12px;color:var(--gray);margin-top:4px;display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--gray);margin-top:4px;display:flex;align-items:center;gap:12px" class="no-print">
                 <code>${s.storeId}</code>
                 <span style="display:flex;align-items:center;gap:5px">
                   📅 KT: 
@@ -2591,11 +2594,11 @@
               <div id="pct_${sid}" style="font-weight:800;font-size:18px;color:${c};margin-top:2px">${pct}%</div>
             </div>
           </div>
-          <div class="prog-bg" style="height:6px;margin-bottom:15px;background:#eee"><div class="prog-bar" id="bar_${sid}" style="width:${pct}%;background:${c}"></div></div>
+          <div class="prog-bg no-print" style="height:6px;margin-bottom:15px;background:#eee"><div class="prog-bar" id="bar_${sid}" style="width:${pct}%;background:${c}"></div></div>
           
-          <div class="tbl-wrap" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+          <div class="tbl-wrap" style="max-height:450px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
             <table class="tbl" style="font-size:11px">
-              <thead style="position:sticky;top:0;background:var(--card);z-index:2">
+              <thead style="position:sticky;top:0;background:var(--card);z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.1)">
                 <tr>
                   <th style="width:40px">ID</th>
                   <th>Hạng mục công việc</th>
@@ -2603,20 +2606,21 @@
                   <th style="width:110px">Hỗ trợ</th>
                   <th style="width:90px">Bắt đầu</th>
                   <th style="width:90px">Deadline</th>
-                  <th style="width:35px">OK</th>
+                  <th style="width:35px" class="no-print">OK</th>
                 </tr>
               </thead>
               <tbody id="tbl_${sid}"><tr><td colspan="7" class="empty-state">Đang nạp timeline...</td></tr></tbody>
             </table>
           </div>
           
-          <div style="margin-top:15px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+          <div style="margin-top:15px;display:flex;gap:8px;justify-content:space-between;align-items:center" class="no-print">
             <div style="display:flex;gap:8px">
-              <button class="btn bp bsm" onclick="saveSetupTasks('${s.storeId}','${sid}')">💾 Lưu tiến độ</button>
-              <button class="btn bo bsm" onclick="addSetupTaskRow('${sid}')">+ Thêm việc</button>
+              <button class="btn bp bsm" onclick="saveSetupTasks('${s.storeId}','${sid}')">💾 Lưu</button>
+              <button class="btn bo bsm" onclick="addSetupTaskRow('${sid}',{isNew:true})">+ Thêm việc</button>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}')">📥 Xuất Excel</button>
+              <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}','excel')">📊 Excel</button>
+              <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}','pdf')">📄 PDF</button>
               <button class="btn bo bsm" onclick="markStoreAsLaunched('${s.storeId}','${s.name}','${sid}')">🎉 Đã KT</button>
             </div>
           </div>
@@ -2644,23 +2648,36 @@
     function addSetupTaskRow(sid, t = {}) {
       const tbody = $(`tbl_${sid}`); if (!tbody) return;
       if (tbody.querySelector('.empty-state')) tbody.innerHTML = '';
+      
+      const filter = ($('setup-phase-filter') ? $('setup-phase-filter').value : 'all').toUpperCase();
+      const phase = (t.phase || (filter !== 'ALL' ? filter : 'KHAI TRƯƠNG')).toUpperCase();
+      
+      if (filter !== 'ALL' && phase !== filter && !t.isNew) return; 
+
       const tr = document.createElement('tr'); tr.className = 't-row';
+      tr.dataset.phase = phase; 
       const s = D.setupStores[parseInt(sid.replace('s_',''))] || {};
+      
       let dates = { s: '', e: '' };
-      if (t.startDelta !== undefined) dates = getTaskDates(t.startDelta, t.endDelta, s.openDate);
-      else {
-        const toISO = str => { if(!str) return ''; let p=str.split('/'); return p.length<3?str:`${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`; };
+      if (t.startDelta !== undefined) {
+        dates = getTaskDates(t.startDelta, t.endDelta, s.openDate);
+      } else {
+        const toISO = str => { 
+          if(!str) return ''; if(str.includes('-')) return str; 
+          let p=str.split('/'); return p.length<3?str:`${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`; 
+        };
         dates = { s: toISO(t.startDate), e: toISO(t.deadline) };
       }
+
       tr.innerHTML = `
         <td style="text-align:center"><input class="fc t-id" value="${t.id || ''}" style="padding:2px;font-size:9px;text-align:center"></td>
         <td><input class="fc t-task" value="${t.task || ''}" style="padding:2px;font-weight:600">
-            <input type="hidden" class="t-phase" value="${(t.phase||'Khai trương').toUpperCase()}"></td>
+            <input type="hidden" class="t-phase" value="${phase}"></td>
         <td><select class="fc t-owner" style="padding:2px">${staffOpt(t.owner)}</select></td>
         <td><select class="fc t-support" style="padding:2px">${staffOpt(t.support)}</select></td>
         <td><input type="date" class="fc t-s" value="${dates.s}" style="padding:2px"></td>
         <td><input type="date" class="fc t-e" value="${dates.e}" style="padding:2px"></td>
-        <td><button class="btn bo bsm t-done ${t.done ? 'bg2' : ''}" onclick="toggleSetupTaskRow(this)" style="min-width:30px">${t.done ? '✓' : ''}</button></td>
+        <td class="no-print"><button class="btn bo bsm t-done ${t.done ? 'bg2' : ''}" onclick="toggleSetupTaskRow(this)" style="min-width:30px">${t.done ? '✓' : ''}</button></td>
       `;
       tbody.appendChild(tr);
     }
@@ -2740,14 +2757,32 @@
       loadSetupPage(); renderDashboard();
     }
 
-    async function exportTimelineStore(storeId, storeName) {
-      load('Đang nạp dữ liệu xuất...');
-      const res = await api({ action: 'getStoreTasks', storeId });
-      unload();
-      if (!res.ok || !res.tasks || !res.tasks.length) { toast('Không có dữ liệu để xuất', 'twarn'); return; }
-      const rows = [['Mã', 'Giai đoạn', 'Hạng mục công việc', 'Bắt đầu', 'Deadline', 'Phụ trách', 'Hỗ trợ', 'Trạng thái']];
-      res.tasks.forEach(t => rows.push([t.id, t.phase, t.task, t.startDate, t.deadline, t.owner, t.support, t.done?'Hoàn thành':'Chưa']));
-      exportXLSX(rows, `Timeline_PhucTea_${storeName.replace(/\s/g, '_')}`);
+    async function exportTimelineStore(storeId, name, type) {
+      if (type === 'excel') {
+        load('Đang xuất Excel...');
+        const res = await api({ action: 'getStoreTasks', storeId });
+        unload();
+        if (!res.ok || !res.tasks.length) { toast('Không có dữ liệu', 'twarn'); return; }
+        const rows = [['ID', 'Giai đoạn', 'Công việc', 'Bắt đầu', 'Deadline', 'Phụ trách', 'Hỗ trợ', 'Trạng thái']];
+        res.tasks.forEach(t => rows.push([t.id, t.phase, t.task, t.startDate, t.deadline, t.owner, t.support, t.done ? 'Hoàn thành' : 'Chưa xong']));
+        exportXLSX(rows, `Setup_${name}`);
+      } else {
+        const idx = D.setupStores.findIndex(s => s.storeId === storeId);
+        const card = document.getElementById('card_s_' + idx);
+        if (!card) return;
+        const pWin = window.open('', '', 'height=800,width=1100');
+        pWin.document.write(`<html><head><title>Phuc Tea Timeline - ${name}</title>`);
+        pWin.document.write('<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">');
+        pWin.document.write('<style>body{font-family:"Outfit",sans-serif;padding:30px;color:#333}.no-print{display:none}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:12px}th{background:#f8f9fa;font-weight:700}.fc{border:none;background:none;width:100%;outline:none;font-family:inherit}input[type=date]{width:auto}select.fc{appearance:none}</style>');
+        pWin.document.write('</head><body>');
+        pWin.document.write('<div style="text-align:center;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:20px"><h1 style="margin:0;color:#c0392b">PHÚC TEA OPERATIONS HUB</h1><p style="margin:5px 0;opacity:0.8;letter-spacing:1px">HỆ THỐNG QUẢN LÝ SETUP & VẬN HÀNH KHAI TRƯƠNG</p></div>');
+        pWin.document.write('<h2 style="margin-top:0">BÁO CÁO TIẾN ĐỘ: '+ name.toUpperCase() +'</h2>');
+        pWin.document.write(card.innerHTML);
+        pWin.document.write('<div style="margin-top:50px;display:flex;justify-content:space-between"><div style="text-align:center;width:250px;border-top:1px solid #333;padding-top:10px">Người lập biểu</div><div style="text-align:center;width:250px;border-top:1px solid #333;padding-top:10px">Quản lý Vận hành</div></div>');
+        pWin.document.write('</body></html>');
+        pWin.document.close();
+        setTimeout(() => { pWin.print(); pWin.close(); }, 500);
+      }
     }
 
     async function aiSetupAdvice(name, pct) {

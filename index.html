@@ -2765,22 +2765,49 @@
     function renderAuditForm() {
       const crit = D.auditCriteria;
       if (!crit.length) { $('audit-criteria-container').innerHTML = '<div class="empty-state">Tải tiêu chí thất bại</div>'; return; }
-      let html = '';
-      let section = '';
-      let maxTotal = 0, stdTotal = 0;
-      crit.forEach((c, i) => {
-        if (c.section !== section) {
-          section = c.section;
-          html += `<div class="audit-section-hd">${section}</div>`;
+      
+      // Group by Major Title (ID before first dot)
+      const sections = {};
+      crit.forEach(c => {
+        const fullId = String(c.id).trim();
+        const majorId = fullId.split('.')[0];
+        if(!sections[majorId]) {
+          sections[majorId] = {
+            id: majorId,
+            name: c.section || 'Hạng mục ' + majorId,
+            subIds: [],
+            max: 0,
+            std: 0
+          };
         }
-        maxTotal += c.maxScore; stdTotal += c.standardScore;
+        // Collect sub-IDs for parentheses note (e.g. 1.1, 1.2)
+        const parts = fullId.split('.');
+        if(parts.length === 2) {
+          sections[majorId].subIds.push(fullId);
+          if(!c.section || c.section.includes('Giai đoạn')) sections[majorId].name = c.criterion;
+        }
+        // Include leaf nodes or scoreable items in totals
+        if(c.maxScore > 0) {
+          sections[majorId].max += c.maxScore;
+          sections[majorId].std += c.standardScore;
+        }
+      });
+
+      let html = '';
+      let maxTotal = 0, stdTotal = 0;
+      Object.keys(sections).sort((a,b)=>Number(a)-Number(b)).forEach(key => {
+        const s = sections[key];
+        if(s.max === 0) return;
+        maxTotal += s.max; stdTotal += s.std;
+        const subNote = s.subIds.length ? ` <span style="font-weight:400;color:var(--gray);font-size:11px">(${s.subIds.join('; ')})</span>` : '';
         html += `<div class="audit-row">
-      <div class="audit-name">${c.criterion}</div>
-      <div class="audit-std" title="Điểm chuẩn">${c.standardScore}</div>
-      <div class="audit-max">/${c.maxScore}</div>
-      <input class="audit-inp" id="ac_${i}" type="number" min="0" max="${c.maxScore}" value="${c.standardScore}" oninput="calcAuditScore()">
+      <div class="audit-name"><strong>${s.id}.</strong> ${s.name}${subNote}</div>
+      <div class="audit-std" title="Điểm chuẩn">${s.std}</div>
+      <div class="audit-max">/${s.max}</div>
+      <input class="audit-inp" id="ac_${s.id}" data-max="${s.max}" type="number" min="0" max="${s.max}" value="${s.std}" oninput="calcAuditScore()">
     </div>`;
       });
+
       $('audit-criteria-container').innerHTML = html;
       $('audit-std-total').textContent = stdTotal;
       $('audit-max-total').textContent = maxTotal;
@@ -2803,9 +2830,9 @@
     }
 
     function calcAuditScore() {
-      const crit = D.auditCriteria;
+      const inps = document.querySelectorAll('.audit-inp');
       let total = 0;
-      for (let i = 0; i < crit.length; i++) { const inp = $('ac_' + i); if (inp) total += parseInt(inp.value) || 0; }
+      inps.forEach(inp => { total += parseInt(inp.value) || 0; });
       const el = $('audit-total'), st = $('audit-status');
       el.textContent = total;
       if (total >= 85) { el.style.color = 'var(--green)'; st.textContent = '✓ Đạt tiêu chuẩn (≥85)'; st.style.color = 'var(--green)'; }
@@ -2870,12 +2897,24 @@
     async function saveAudit() {
       const store = $('audit-store').value;
       if (!store) { toast('⚠️ Chọn cửa hàng trước', 'twarn'); return; }
-      const crit = D.auditCriteria;
       const scores = {};
       let total = 0;
-      crit.forEach((c, i) => { const inp = $('ac_' + i); const v = parseInt(inp?.value) || 0; scores[c.id] = v; total += v; });
+      const inps = document.querySelectorAll('.audit-inp');
+      inps.forEach(inp => { 
+        const id = inp.id.replace('ac_', '');
+        const v = parseInt(inp.value) || 0; 
+        scores[id] = v; 
+        total += v; 
+      });
       load('Đang lưu audit...');
-      const res = await api({ action: 'saveAudit', data: { store, score: total, date: $('audit-date').value, type: $('audit-type').value, actionPlan: $('action-plan').value, scores, auditor: 'Dương Thanh Liêm' } });
+      const res = await api({ 
+        action: 'saveAudit', 
+        data: { 
+          store, score: total, date: $('audit-date').value, 
+          type: $('audit-type').value, actionPlan: $('action-plan').value, 
+          scores, auditor: 'Dương Thanh Liêm' 
+        } 
+      });
       unload();
       if (res.ok) {
         toast(`✅ Đã lưu audit ${store}: ${total}/100`);
@@ -3289,18 +3328,19 @@ ${new Date().toLocaleDateString('vi-VN')}`;
 • Điểm audit: TH ${actualAudit}/100 / KH ≥${plan.targetAudit || 85} ${actualAudit >= (plan.targetAudit || 85) ? '✅' : '⚠️'}
 • Ngân sách: Đã dùng ${budgetUsed}tr / KH ${plan.budget || 0}tr\n`;
       }
-      reportText = `[Operations – Dương Thanh Liêm] – Kế hoạch Tháng ${month} & Báo cáo kết quả Tháng ${month}
+      reportText = `[Operations – Dương Thanh Liêm] – Báo cáo kết quả Tháng ${month}
+      
+Kính gửi Anh Lý Tấn Tài và Ban lãnh đạo Phúc Tea,
 
-Kính gửi Anh Tài, Anh Vũ, Chị Yến và Bộ phận HR,
-
-Em xin gửi báo cáo kết quả thực hiện kế hoạch ${month} của bộ phận Operations.${compareSection}
+Em xin gửi báo cáo kết quả thực hiện kế hoạch cửa hàng & vận hành tháng ${month}.${compareSection}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 KẾT QUẢ THỰC HIỆN
+📊 KẾT QUẢ THỰC HIỆN TOÀN HỆ THỐNG
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Cửa hàng khai trương: ${actualStores} cửa hàng
-• Điểm audit TB hệ thống: ${actualAudit}/100
-• Số lượt audit: ${auditCnt}
-• Ngân sách đã dùng: ${budgetUsed} triệu đồng
+• Số cửa hàng mới khai trương: ${actualStores} (Chi tiết trong Module Setup)
+• Điểm Audit trung bình hệ thống: ${actualAudit}/100
+• Tổng số lượt Audit trong tháng: ${auditCnt} lượt
+• Ngân sách đã sử dụng: ${budgetUsed} triệu VNĐ
+...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ THÀNH TỰU NỔI BẬT
@@ -3414,8 +3454,8 @@ ${new Date().toLocaleDateString('vi-VN')}`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': CFG.apiKey, 'anthropic-version': '2023-06-01' },
             body: JSON.stringify({
-              model: 'claude-sonnet-4-20250514', max_tokens: 1500,
-              system: 'Bạn là AI assistant vận hành Phúc Tea Cần Thơ. ' + (system || 'Trả lời tiếng Việt, ngắn gọn, thực tế.'),
+              model: 'claude-3-5-sonnet-20241022', max_tokens: 1500,
+              system: 'Bạn là Operations Leader của hệ thống Phúc Tea Việt Nam. Trả lời chuyên nghiệp, thực tế theo đúng văn hóa Phuc Tea: Thân thiện - Minh bạch - Quyết liệt. ' + (system || 'Trả lời bằng tiếng Việt.'),
               messages: [{ role: 'user', content: prompt }]
             })
           });

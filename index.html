@@ -2762,19 +2762,21 @@
 
     function addSetupTaskRow(sid, t = {}) {
       const tbody = $(`tbl_${sid}`);
+      if (!tbody) return;
       if (tbody.querySelector('.empty-state')) tbody.innerHTML = '';
-      const fVal = $('setup-phase-filter').value.trim().toUpperCase();
+      const fVal = (document.getElementById('setup-phase-filter').value || 'all').trim().toUpperCase();
       const tr = document.createElement('tr');
       tr.className = 't-row';
 
       const taskPhase = (t.phase || '').trim();
       if (fVal !== 'ALL' && taskPhase.toUpperCase() !== fVal) tr.classList.add('hidden');
 
-      const s = D.setupStores[parseInt(sid.replace('s_', ''))] || {};
+      const si = parseInt(sid.replace('s_', ''));
+      const s = D.setupStores[si] || {};
       const dates = t.startDelta !== undefined ? getTaskDates(t.startDelta, t.endDelta, s.openDate) : { s: t.startDate || '', e: t.deadline || '' };
 
       tr.innerHTML = `
-        <td style="text-align:center"><input class="fc t-id" value="${t.id || ''}" style="padding:2px;font-size:10px"></td>
+        <td style="text-align:center"><input class="fc t-id" value="${t.id || ''}" style="padding:2px;font-size:10px;text-align:center"></td>
         <td><input class="fc t-task" value="${t.task || ''}" style="padding:2px;font-weight:600">
             <input type="hidden" class="t-phase" value="${taskPhase.toUpperCase()}"></td>
         <td><select class="fc t-owner" style="padding:2px">${staffOpt(t.owner)}</select></td>
@@ -2784,6 +2786,57 @@
         <td><button class="btn bo bsm t-done ${t.done ? 'bg2' : ''}" onclick="toggleSetupTaskRow(this)" style="min-width:30px">${t.done ? '✓' : ''}</button></td>
       `;
       tbody.appendChild(tr);
+    }
+
+    async function loadStoreTasks(storeId, sid) {
+      if (!storeId || storeId === 'undefined') { toast('⚠️ Cửa hàng chưa có Store ID', 'twarn'); return; }
+      load('Đang nạp timeline...');
+      try {
+        let data = await api({ action: 'getStoreTasks', storeId });
+        if (data.ok && (!data.tasks || data.tasks.length === 0)) {
+          const si = parseInt(sid.replace('s_', ''));
+          const s = D.setupStores[si];
+          await api({ action: 'createTimeline', storeId, storeName: s.name, launchDate: s.openDate });
+          data = await api({ action: 'getStoreTasks', storeId });
+        }
+        unload();
+        if (!data.ok) { toast('❌ ' + (data.error || 'Lỗi tải'), 'terr'); return; }
+
+        const tbody = $(`tbl_${sid}`);
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        data.tasks.forEach(t => addSetupTaskRow(sid, t));
+        recalcSetupProgressTable(sid, parseInt(sid.replace('s_', '')));
+        toast(`✅ Đã nạp ${data.tasks.length} hạng mục`);
+      } catch (e) { unload(); toast('❌ Lỗi kết nối API', 'terr'); }
+    }
+
+    async function saveSetupTasks(storeId, sid) {
+      if (!storeId || storeId === 'undefined') { toast('⚠️ Thiếu Store ID', 'twarn'); return; }
+      const rows = $(`tbl_${sid}`).querySelectorAll('tr.t-row');
+      const tasks = [];
+      rows.forEach(r => {
+        tasks.push({
+          id: r.querySelector('.t-id').value,
+          task: r.querySelector('.t-task').value,
+          phase: r.querySelector('.t-phase').value,
+          owner: r.querySelector('.t-owner').value,
+          support: r.querySelector('.t-support').value,
+          startDate: r.querySelector('.t-s').value ? r.querySelector('.t-s').value.split('-').reverse().join('/') : '',
+          deadline: r.querySelector('.t-e').value ? r.querySelector('.t-e').value.split('-').reverse().join('/') : '',
+          done: r.querySelector('.t-done').classList.contains('bg2')
+        });
+      });
+      load('Đang lưu...');
+      try {
+        const res = await api({ action: 'saveStoreTasks', storeId, tasks });
+        unload();
+        if (res.ok) {
+          toast('✅ Đã lưu tiến độ thành công!');
+          const si = parseInt(sid.replace('s_', ''));
+          recalcSetupProgressTable(sid, si);
+        } else toast('❌ ' + (res.error || 'Lỗi lưu'), 'terr');
+      } catch (e) { unload(); toast('❌ Lỗi kết nối', 'terr'); }
     }
 
     async function markStoreAsLaunched(storeId, name, sid) {

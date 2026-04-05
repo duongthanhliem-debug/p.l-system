@@ -1091,6 +1091,15 @@
       box-shadow: var(--sh)
     }
 
+    .task-overdue { background: rgba(229,62,62,0.06); border-left: 3px solid var(--red) !important; }
+    .task-today { background: rgba(245,166,35,0.07); border-left: 3px solid var(--gold) !important; }
+    .mytask-store-header {
+      font-weight: 700; font-size: 13px; color: var(--brown);
+      padding: 7px 12px; background: var(--gold-l);
+      border-radius: var(--rs) var(--rs) 0 0;
+      border: 1px solid var(--border);
+    }
+
     .ai-box {
       background: linear-gradient(135deg, var(--brown), var(--brown-m));
       border-radius: var(--r);
@@ -1263,12 +1272,13 @@
     <div class="ntabs">
       <button class="ntab on" onclick="goPage('dashboard',this)">📊 Dashboard</button>
       <button class="ntab" onclick="goPage('stores',this)">🏬 Cửa hàng</button>
-      <button class="ntab" onclick="goPage('setup',this)">🏪 Setup & KT</button>
+      <button class="ntab" onclick="goPage('setup',this);loadSetupPage()">🏪 Setup & KT</button>
       <button class="ntab" onclick="goPage('audit',this)">✅ Audit</button>
       <button class="ntab" onclick="goPage('nhansu',this)">👥 Nhân sự</button>
       <button class="ntab" onclick="goPage('kehoach',this)">🎯 Kế hoạch</button>
       <button class="ntab" onclick="goPage('baocao',this)">📋 Báo cáo</button>
       <button class="ntab" onclick="goPage('ai',this)">🤖 AI</button>
+      <button class="ntab" onclick="goPage('mytasks',this);loadMyTasks()">📌 Việc Của Tôi</button>
     </div>
   </nav>
 
@@ -1356,6 +1366,23 @@
         vận hành.</div>
       <button class="btn bsm" style="background:var(--gold);color:var(--brown);margin-top:10px"
         onclick="aiDashInsight()">🤖 Phân tích ngay</button>
+    </div>
+
+    <!-- VIỆC CỦA TÔI - Dashboard widget -->
+    <div class="card" id="my-tasks-widget" style="margin-top:0">
+      <div class="ch">
+        <span class="ct">📌 Việc Của Tôi</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select class="fc bsm" id="mock-user-select" style="min-width:160px" onchange="loadMyTasks()">
+            <option value="">-- Chọn nhân sự --</option>
+          </select>
+          <button class="btn bo bsm" onclick="loadMyTasks()">🔄</button>
+          <button class="btn bo bsm" onclick="goPage('mytasks',document.querySelectorAll('.ntab')[8]);loadMyTasks()">Xem tất cả →</button>
+        </div>
+      </div>
+      <div class="cb" id="my-tasks-dash">
+        <div class="empty-state" style="padding:16px"><div class="ei">📌</div>Chọn tên nhân sự để xem việc cần làm</div>
+      </div>
     </div>
   </div>
 
@@ -1939,6 +1966,59 @@
 
   <!-- ═══ MODALS ═══ -->
 
+  <!-- ═══ VIỆC CỦA TÔI ═══ -->
+  <div class="page" id="pg-mytasks">
+    <div class="ph">
+      <div>
+        <div class="pt">📌 Việc Của Tôi</div>
+        <div class="ps">Tất cả công việc chưa hoàn thành theo IC – đồng bộ từ timeline Google Sheets</div>
+      </div>
+      <div class="fb">
+        <select class="fc" id="mytask-user-select" style="min-width:200px" onchange="loadMyTasks()">
+          <option value="">-- Chọn nhân sự --</option>
+        </select>
+        <button class="btn bo bsm" onclick="loadMyTasks()">🔄 Tải lại</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="kgrid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi">
+        <div class="kl">Việc chưa xong</div>
+        <div class="kv" style="color:var(--red)" id="mytask-cnt">–</div>
+        <div class="kc dn">Cần xử lý</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Quá hạn</div>
+        <div class="kv" style="color:var(--red)" id="mytask-overdue">–</div>
+        <div class="kc dn">Đã qua deadline</div>
+      </div>
+      <div class="kpi">
+        <div class="kl">Deadline hôm nay</div>
+        <div class="kv" style="color:var(--gold)" id="mytask-today">–</div>
+        <div class="kc warn">Cần hoàn thành</div>
+      </div>
+    </div>
+
+    <!-- Task list -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Danh sách công việc</span>
+        <div style="display:flex;gap:6px">
+          <select class="fc bsm" id="mytask-filter-store" onchange="filterMyTasks()" style="min-width:150px">
+            <option value="all">Tất cả cửa hàng</option>
+          </select>
+          <select class="fc bsm" id="mytask-filter-phase" onchange="filterMyTasks()" style="min-width:160px">
+            <option value="all">Tất cả giai đoạn</option>
+          </select>
+        </div>
+      </div>
+      <div id="mytasks-list">
+        <div class="empty-state"><div class="ei">📌</div>Chọn nhân sự để xem việc cần làm</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings -->
   <div class="overlay" id="modal-settings">
     <div class="modal">
@@ -2103,7 +2183,7 @@
         <div class="staff-av" style="width:52px;height:52px;font-size:18px" id="profile-av">DL</div>
         <div>
           <div style="font-weight:700;font-size:15px" id="profile-name">Dương Thanh Liêm</div>
-          <div style="font-size:12px;color:var(--gray)" id="profile-email">duongthanhliem@phuctea.com.vn</div>
+          <div style="font-size:12px;color:var(--gray)" id="profile-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d9bdacb6b7beadb1b8b7b1b5b0bcb499a9b1acbaadbcb8f7bab6b4f7afb7">[email&#160;protected]</a></div>
           <div style="margin-top:4px"><span class="bdg bb2" id="profile-role">System</span></div>
         </div>
       </div>
@@ -2184,7 +2264,7 @@
     </div>
   </div>
 
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ════════════════════════════════════════
     //  CONFIG & STATE
     // ════════════════════════════════════════
@@ -2198,7 +2278,7 @@
       kpi: { stores: 0, setupCount: 0, newStores: 0, targetStores: 30, auditAvg: 0, reauditCount: 0 },
       auditList: [], secretList: [], setupStores: [], allStores: [],
       staffList: [], plans: [], reports: [], template: [], auditCriteria: [],
-      timeline: []
+      timeline: [], employees: [], myTasks: []
     };
     let reportText = '', planText = '', auditReportText = '';
     let emailMode = 'plan';
@@ -2317,6 +2397,7 @@
           
           // Nạp các phần bổ trợ một cách tuần tự và nhẹ nhàng
           await loadStaff();
+          await loadEmployees();
           // Template nạp khi vào trang setup hoặc nạp ngầm không treo
           api({ action: 'getSetupTemplate' }).then(res => { if(res.ok) D.template = res.template || []; });
           
@@ -2590,13 +2671,56 @@
       return h;
     }
 
-    function filterSetupPhase() { renderSetupList(); }
+    // Active staff only (for IC/Supporter dropdowns in timeline)
+    function activeStaffOpt(current) {
+      let h = '<option value="">-- Chọn --</option>';
+      const list = (D.employees || D.staffList || []).filter(s => s && s.name);
+      list.forEach(s => {
+        const label = s.display || `${s.name} – ${s.position||'–'} – ${s.store||'–'}`;
+        h += `<option value="${s.name}" ${s.name === current ? 'selected' : ''}>${label}</option>`;
+      });
+      if (current && !list.some(s => s && s.name === current)) {
+        h += `<option value="${current}" selected>${current} (Cũ/Không hoạt động)</option>`;
+      }
+      return h;
+    }
+
+    // Load active employees for dropdowns
+    async function loadEmployees() {
+      if (!CFG.scriptUrl) return;
+      try {
+        const data = await api({ action: 'getEmployees' });
+        if (data.ok) {
+          D.employees = data.employees || [];
+          // Populate mock-user dropdowns
+          const selectors = ['mock-user-select','mytask-user-select'];
+          selectors.forEach(id => {
+            const sel = $(id); if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">-- Chọn nhân sự --</option>';
+            D.employees.forEach(e => {
+              sel.innerHTML += `<option value="${e.name}" ${e.name===cur?'selected':''}>${e.display||e.name}</option>`;
+            });
+          });
+        }
+      } catch(e) { console.error('loadEmployees error:', e); }
+    }
+
+    function filterSetupPhase() {
+      const filter = ($('setup-phase-filter') ? $('setup-phase-filter').value : 'all').toUpperCase();
+      document.querySelectorAll('tr.t-row').forEach(tr => {
+        const phase = (tr.dataset.phase || '').toUpperCase();
+        tr.style.display = (filter === 'ALL' || phase === filter) ? '' : 'none';
+      });
+    }
+
 
     async function loadSetupPage() {
       if (!CFG.scriptUrl) return;
       load('Đang nạp dữ liệu Setup...');
       try {
         await loadStaff();
+        await loadEmployees();
         if (!D.template.length) {
           const tData = await api({ action: 'getSetupTemplate' });
           if (tData.ok) D.template = tData.template || [];
@@ -2656,8 +2780,8 @@
               <thead style="position:sticky;top:0;background:var(--card);z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.1)">
                 <tr>
                   <th>Hạng mục công việc</th>
-                  <th style="width:110px">Phụ trách</th>
-                  <th style="width:110px">Hỗ trợ</th>
+                  <th style="width:110px">IC (Phụ trách)</th>
+                  <th style="width:110px">Người hỗ trợ</th>
                   <th style="width:90px">Bắt đầu</th>
                   <th style="width:90px">Deadline</th>
                   <th style="width:35px" class="no-print">OK</th>
@@ -2734,11 +2858,14 @@
       }
 
       tr.innerHTML = `
-        <td><input class="fc t-task" value="${t.task || ''}" style="padding:2px;font-weight:600">
-            <input type="hidden" class="t-id" value="${t.id || ''}">
-            <input type="hidden" class="t-phase" value="${phase}"></td>
-        <td><select class="fc t-owner" style="padding:2px">${staffOpt(t.owner)}</select></td>
-        <td><select class="fc t-support" style="padding:2px">${staffOpt(t.support)}</select></td>
+        <td>
+          <div style="font-size:11px;color:var(--brown-m);font-weight:600;margin-bottom:2px">${phase}</div>
+          <input class="fc t-task" value="${(t.task||'').replace(/"/g,'&quot;')}" style="padding:2px;font-weight:600">
+          <input type="hidden" class="t-id" value="${t.id || ''}">
+          <input type="hidden" class="t-phase" value="${phase}">
+        </td>
+        <td><select class="fc t-ic" style="padding:2px">${activeStaffOpt(t.ic||t.owner)}</select></td>
+        <td><select class="fc t-support" style="padding:2px">${activeStaffOpt(t.supporter||t.support)}</select></td>
         <td><input type="date" class="fc t-s" value="${dates.s}" style="padding:2px"></td>
         <td><input type="date" class="fc t-e" value="${dates.e}" style="padding:2px"></td>
         <td class="no-print"><button class="btn bo bsm t-done ${t.done ? 'bg2' : ''}" onclick="toggleSetupTaskRow(this)" style="min-width:30px">${t.done ? '✓' : ''}</button></td>
@@ -2797,34 +2924,46 @@
       }
     }
 
-    function recalcStoreTimelineDates(sid, newLaunch) {
-      if(!confirm('Tính lại toàn bộ Deadline theo ngày khai trương mới?')) return;
-      const rows = $(`tbl_${sid}`).querySelectorAll('tr.t-row');
-      rows.forEach(r => {
-        const tid = r.querySelector('.t-id').value;
-        const itm = D.template.find(v => v.id === tid);
-        if (itm && itm.startDelta !== undefined) {
-          const d = getTaskDates(itm.startDelta, itm.endDelta, newLaunch);
-          r.querySelector('.t-s').value = d.s; r.querySelector('.t-e').value = d.e;
-        }
-      });
-      toast('📅 Đã tính lại Deadline!');
+    async function recalcStoreTimelineDates(sid, newLaunchISO) {
+      if (!newLaunchISO) return;
+      const si = parseInt(sid.replace('s_',''));
+      const store = D.setupStores[si];
+      if (!store) return;
+      const newLaunchVN = newLaunchISO.split('-').reverse().join('/');
+      if (!confirm(`Cập nhật ngày khai trương thành ${newLaunchVN} và tính lại toàn bộ deadline cho ${store.name}?`)) return;
+      
+      load('Đang tính lại ngày...');
+      const res = await api({ action: 'updateOpeningDate', storeId: store.storeId, newLaunchDate: newLaunchVN });
+      if (res.ok) {
+        toast('✅ Đã cập nhật ngày & tính lại timeline!');
+        store.openDate = newLaunchVN;
+        // Reload tasks for this store
+        await loadStoreTasks(store.storeId, sid, false);
+      } else {
+        toast('❌ ' + (res.error || 'Lỗi cập nhật'), 'terr');
+      }
+      unload();
     }
 
     async function saveSetupTasks(storeId, sid) {
       const rows = $(`tbl_${sid}`).querySelectorAll('tr.t-row');
       const tasks = Array.from(rows).map(r => ({
-        id: r.querySelector('.t-id').value, task: r.querySelector('.t-task').value, phase: r.querySelector('.t-phase').value,
-        owner: r.querySelector('.t-owner').value, support: r.querySelector('.t-support').value,
-        startDate: r.querySelector('.t-s').value.split('-').reverse().join('/'),
-        deadline: r.querySelector('.t-e').value.split('-').reverse().join('/'),
+        id: r.querySelector('.t-id').value,
+        task: r.querySelector('.t-task').value,
+        phase: r.querySelector('.t-phase').value,
+        ic: (r.querySelector('.t-ic') || r.querySelector('.t-owner') || {value:''}).value,
+        supporter: (r.querySelector('.t-support') || {value:''}).value,
+        startDate: (r.querySelector('.t-s').value || '').split('-').reverse().join('/'),
+        deadline: (r.querySelector('.t-e').value || '').split('-').reverse().join('/'),
         done: r.querySelector('.t-done').classList.contains('bg2')
       }));
-      load('Đang lưu...');
+      load('Đang lưu lên Sheets...');
       const res = await api({ action: 'saveStoreTasks', storeId, tasks });
-      const lnch = $(`card_${sid}`).querySelector('.t-open-date').value.split('-').reverse().join('/');
-      await api({ action: 'updateStoreLaunchDate', storeId, launchDate: lnch });
-      unload(); if(res.ok) { toast('✅ Đã lưu thành công!'); recalcSetupProgressTable(sid, parseInt(sid.replace('s_',''))); }
+      unload();
+      if (res.ok) {
+        toast(`✅ Đã lưu ${tasks.length} tasks! Tiến độ: ${res.progress || 0}%`);
+        recalcSetupProgressTable(sid, parseInt(sid.replace('s_','')));
+      } else toast('❌ ' + (res.error || 'Lỗi lưu'), 'terr');
     }
 
     function toggleSetupTaskRow(btn) {
@@ -2867,26 +3006,31 @@
       if (!res.ok || !res.tasks || !res.tasks.length) { toast('Không có dữ liệu', 'twarn'); return; }
 
       if (type === 'excel') {
-        const rows = [['ID', 'Giai đoạn', 'Công việc', 'Bắt đầu', 'Deadline', 'Phụ trách', 'Hỗ trợ', 'Trạng thái']];
-        res.tasks.forEach(t => rows.push([t.id, t.phase, t.task, t.startDate, t.deadline, t.owner, t.support, t.done ? 'Hoàn thành' : 'Chưa xong']));
+        const rows = [['ID', 'Giai đoạn', 'Công việc', 'Bắt đầu', 'Deadline', 'IC (Phụ trách)', 'Người hỗ trợ', 'Trạng thái']];
+        res.tasks.forEach(t => rows.push([t.id, t.phase, t.task, t.startDate, t.deadline, t.ic||t.owner||'', t.supporter||'', t.done ? 'Hoàn thành' : 'Chưa xong']));
         exportXLSX(rows, `Setup_${name}`);
       } else {
         const pWin = window.open('', '', 'height=800,width=1100');
         pWin.document.write(`<html><head><title>Phuc Tea Timeline - ${name}</title>`);
         pWin.document.write('<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">');
-        pWin.document.write('<style>body{font-family:"Outfit",sans-serif;padding:30px;color:#333}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:11px}th{background:#f4f4f4;font-weight:700}.phase-row{background:#fafafa;font-weight:700;color:var(--brown)} .done-st{color:green;font-weight:bold} .not-done{color:#999} h1,h2{margin:5px 0}</style>');
+        pWin.document.write('<style>body{font-family:"Outfit",sans-serif;padding:30px;color:#333}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:11px}th{background:#3D2B1F;color:#F5A623;font-weight:700}.phase-hd{background:#fdf3e3;font-weight:700;color:#3D2B1F} .done-st{color:green;font-weight:bold} .not-done{color:#999} h1,h2{margin:5px 0}</style>');
         pWin.document.write('</head><body>');
-        pWin.document.write('<div style="text-align:center;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:20px"><h1 style="color:#c0392b">PHÚC TEA OPERATIONS HUB</h1><p style="margin:0;letter-spacing:1px">HỆ THỐNG QUẢN LÝ SETUP & KHAI TRƯƠNG</p></div>');
-        pWin.document.write(`<h2>BÁO CÁO TIẾN ĐỘ: ${name.toUpperCase()}</h2>`);
+        pWin.document.write('<div style="text-align:center;border-bottom:3px solid #F5A623;padding-bottom:10px;margin-bottom:20px"><h1 style="color:#3D2B1F">PHÚC TEA OPERATIONS HUB</h1><p style="margin:0;letter-spacing:1px;color:#666">HỆ THỐNG QUẢN LÝ SETUP & KHAI TRƯƠNG</p></div>');
+        pWin.document.write(`<h2>TIMELINE KHAI TRƯƠNG: ${name.toUpperCase()}</h2>`);
         const s = D.setupStores.find(st => st.storeId === storeId) || {};
-        pWin.document.write(`<div style="display:flex;justify-content:space-between;margin-top:10px"><span>Mã CH: <b>${storeId}</b></span><span>Ngày khai trương: <b>${s.openDate || '–'}</b></span><span>Tiến độ: <b>${s.progress || 0}%</b></span></div>`);
+        pWin.document.write(`<div style="display:flex;justify-content:space-between;margin:10px 0;font-size:12px"><span>Mã CH: <b>${storeId}</b></span><span>Ngày khai trương: <b>${s.openDate || '–'}</b></span><span>Tiến độ: <b>${s.progress || 0}%</b></span></div>`);
         
-        pWin.document.write('<table><thead><tr><th>Giai đoạn</th><th>Hạng mục công việc</th><th>Phụ trách</th><th>Bắt đầu</th><th>Deadline</th><th>Trạng thái</th></tr></thead><tbody>');
-        res.tasks.forEach(t => {
-          pWin.document.write(`<tr><td>${t.phase}</td><td style="font-weight:600">${t.task}</td><td>${t.owner || ''}</td><td>${t.startDate}</td><td>${t.deadline}</td><td class="${t.done?'done-st':'not-done'}">${t.done?'✓ Xong':'– Chưa'}</td></tr>`);
+        // Group by phase
+        const phases = [...new Set(res.tasks.map(t=>t.phase))];
+        phases.forEach(ph => {
+          const phTasks = res.tasks.filter(t=>t.phase===ph);
+          pWin.document.write(`<table><thead><tr class="phase-hd"><td colspan="7" style="background:#fdf3e3;color:#3D2B1F;font-weight:700;padding:8px">${ph}</td></tr><tr><th>Công việc</th><th>IC (Phụ trách)</th><th>Người hỗ trợ</th><th>Bắt đầu</th><th>Deadline</th><th>Trạng thái</th></tr></thead><tbody>`);
+          phTasks.forEach(t => {
+            pWin.document.write(`<tr><td style="font-weight:500">${t.task}</td><td>${t.ic||t.owner||''}</td><td>${t.supporter||''}</td><td>${t.startDate}</td><td>${t.deadline}</td><td class="${t.done?'done-st':'not-done'}">${t.done?'✓ Xong':'– Chưa'}</td></tr>`);
+          });
+          pWin.document.write('</tbody></table><br>');
         });
-        pWin.document.write('</tbody></table>');
-        pWin.document.write('<div style="margin-top:60px;display:flex;justify-content:space-between"><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Người lập biểu</div><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Bộ phận Setup</div><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Quản lý Vận hành</div></div>');
+        pWin.document.write('<div style="margin-top:40px;display:flex;justify-content:space-between"><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Người lập biểu</div><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Bộ phận Setup</div><div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:10px">Quản lý Vận hành</div></div>');
         pWin.document.write('</body></html>');
         pWin.document.close();
         setTimeout(() => { pWin.print(); pWin.close(); }, 700);
@@ -3669,6 +3813,181 @@ ${new Date().toLocaleDateString('vi-VN')}`;
     function quickAsk(q) { $('ai-q').value = q; goPage('ai', document.querySelectorAll('.ntab')[7]); setTimeout(askAI, 80); }
 
     // ════════════════════════════════════════
+    //  VIỆC CỦA TÔI
+    // ════════════════════════════════════════
+    async function loadMyTasks() {
+      // Get selected user from whichever selector is visible
+      const userDash = $('mock-user-select');
+      const userFull = $('mytask-user-select');
+      // Sync selections
+      const userName = (userFull && userFull.value) ? userFull.value : (userDash ? userDash.value : '');
+      if (userDash && userName) userDash.value = userName;
+      if (userFull && userName) userFull.value = userName;
+
+      if (!userName) {
+        renderMyTasks([]);
+        return;
+      }
+      if (!CFG.scriptUrl) { toast('⚠️ Chưa cấu hình Apps Script URL', 'twarn'); return; }
+
+      load('Đang tải việc của ' + userName + '...');
+      try {
+        const res = await api({ action: 'getMyTasks', userName });
+        unload();
+        if (res.ok) {
+          D.myTasks = res.tasks || [];
+          renderMyTasks(D.myTasks);
+          // Update store/phase filters
+          updateMyTaskFilters(D.myTasks);
+        } else {
+          toast('❌ ' + (res.error || 'Lỗi tải việc'), 'terr');
+          unload();
+        }
+      } catch(e) {
+        unload();
+        toast('❌ Lỗi kết nối', 'terr');
+      }
+    }
+
+    function updateMyTaskFilters(tasks) {
+      const stores = [...new Set(tasks.map(t => t.storeName).filter(Boolean))];
+      const phases = [...new Set(tasks.map(t => t.phase).filter(Boolean))];
+      const stSel = $('mytask-filter-store');
+      const phSel = $('mytask-filter-phase');
+      if (stSel) {
+        stSel.innerHTML = '<option value="all">Tất cả cửa hàng</option>';
+        stores.forEach(s => stSel.innerHTML += `<option value="${s}">${s}</option>`);
+      }
+      if (phSel) {
+        phSel.innerHTML = '<option value="all">Tất cả giai đoạn</option>';
+        phases.forEach(p => phSel.innerHTML += `<option value="${p}">${p}</option>`);
+      }
+    }
+
+    function filterMyTasks() {
+      const storeFilter = ($('mytask-filter-store') || {value:'all'}).value;
+      const phaseFilter = ($('mytask-filter-phase') || {value:'all'}).value;
+      let tasks = [...D.myTasks];
+      if (storeFilter !== 'all') tasks = tasks.filter(t => t.storeName === storeFilter);
+      if (phaseFilter !== 'all') tasks = tasks.filter(t => t.phase === phaseFilter);
+      renderMyTasks(tasks, true);
+    }
+
+    function renderMyTasks(tasks, filtered = false) {
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      const parseDeadline = dl => {
+        if (!dl) return null;
+        try {
+          const p = dl.split('/');
+          if (p.length === 3) return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+          return new Date(dl);
+        } catch(e) { return null; }
+      };
+
+      const overdue = tasks.filter(t => { const d = parseDeadline(t.deadline); return d && d < today; });
+      const todayTasks = tasks.filter(t => { const d = parseDeadline(t.deadline); return d && d.getTime() === today.getTime(); });
+
+      // Update KPI counts (only on full page, not widget)
+      const cntEl = $('mytask-cnt');
+      const ovEl  = $('mytask-overdue');
+      const todEl = $('mytask-today');
+      if (cntEl) cntEl.textContent = tasks.length;
+      if (ovEl)  ovEl.textContent  = overdue.length;
+      if (todEl) todEl.textContent = todayTasks.length;
+
+      // Dashboard widget (compact)
+      const dashEl = $('my-tasks-dash');
+      if (dashEl) {
+        if (!tasks.length) {
+          dashEl.innerHTML = '<div class="empty-state" style="padding:14px"><div class="ei">✅</div>Không có việc cần làm!</div>';
+        } else {
+          const shown = tasks.slice(0, 5);
+          dashEl.innerHTML = shown.map(t => {
+            const dl = parseDeadline(t.deadline);
+            const isOD = dl && dl < today;
+            const isTD = dl && dl.getTime() === today.getTime();
+            const dlColor = isOD ? 'var(--red)' : isTD ? 'var(--gold)' : 'var(--gray)';
+            return `<div class="chk-item" style="padding:8px 0;border-bottom:1px solid var(--border)">
+              <div class="chk-text">
+                <div style="font-weight:600;font-size:13px">${t.task}</div>
+                <div style="font-size:11px;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
+                  <span style="color:var(--blue)">🏪 ${t.storeName}</span>
+                  <span style="color:var(--brown-m)">📂 ${t.phase}</span>
+                  <span style="color:${dlColor};font-weight:${isOD||isTD?'700':'400'}">
+                    📅 ${isOD?'⚠️ Quá hạn: ':isTD?'🔔 Hôm nay: ':''}${t.deadline||'–'}
+                  </span>
+                </div>
+              </div>
+            </div>`;
+          }).join('') + (tasks.length > 5 ? `<div style="text-align:center;padding:8px;font-size:12px;color:var(--gray)">và ${tasks.length-5} việc khác...</div>` : '');
+        }
+      }
+
+      // Full page list
+      const listEl = $('mytasks-list');
+      if (!listEl) return;
+      if (!tasks.length) {
+        listEl.innerHTML = filtered
+          ? '<div class="empty-state"><div class="ei">🔍</div>Không có việc phù hợp với bộ lọc</div>'
+          : '<div class="empty-state"><div class="ei">✅</div>Không có việc chưa hoàn thành!</div>';
+        return;
+      }
+
+      // Group by store
+      const byStore = {};
+      tasks.forEach(t => {
+        if (!byStore[t.storeName]) byStore[t.storeName] = [];
+        byStore[t.storeName].push(t);
+      });
+
+      listEl.innerHTML = Object.entries(byStore).map(([storeName, storeTasks]) => {
+        const taskRows = storeTasks.map(t => {
+          const dl = parseDeadline(t.deadline);
+          const isOD = dl && dl < today;
+          const isTD = dl && dl.getTime() === today.getTime();
+          const rowBg = isOD ? 'background:rgba(229,62,62,0.05)' : isTD ? 'background:rgba(245,166,35,0.06)' : '';
+          return `<tr style="${rowBg}">
+            <td style="font-weight:600">${t.task}</td>
+            <td><span class="bdg bb2" style="font-size:10px">${t.phase}</span></td>
+            <td style="color:${isOD?'var(--red)':isTD?'var(--gold)':'var(--gray)'};font-weight:${isOD||isTD?'700':'400'}">
+              ${isOD?'⚠️ ':'🔔 '}${t.deadline||'–'}
+            </td>
+            <td><button class="btn bp bsm" onclick="quickMarkDone('${t.storeId}','${t.taskId}',this)">✓ Xong</button></td>
+          </tr>`;
+        }).join('');
+
+        return `<div style="margin-bottom:16px">
+          <div style="font-weight:700;font-size:14px;color:var(--brown);padding:8px 12px;background:var(--gold-l);border-radius:var(--rs) var(--rs) 0 0;border:1px solid var(--border)">
+            🏪 ${storeName}
+            <span class="bdg by2" style="margin-left:8px">${storeTasks.length} việc</span>
+          </div>
+          <div class="tbl-wrap" style="border-radius:0 0 var(--rs) var(--rs);border:1px solid var(--border);border-top:none">
+            <table class="tbl" style="font-size:12px">
+              <thead><tr><th>Công việc</th><th>Giai đoạn</th><th>Deadline</th><th></th></tr></thead>
+              <tbody>${taskRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function quickMarkDone(storeId, taskId, btn) {
+      if (!storeId || !taskId) return;
+      btn.disabled = true; btn.textContent = '...';
+      const res = await api({ action: 'updateTaskStatus', storeId, taskId, done: true });
+      if (res.ok) {
+        toast('✅ Đã đánh dấu hoàn thành!');
+        // Remove from local list
+        D.myTasks = D.myTasks.filter(t => !(t.storeId === storeId && t.taskId === taskId));
+        renderMyTasks(D.myTasks);
+      } else {
+        toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+        btn.disabled = false; btn.textContent = '✓ Xong';
+      }
+    }
+
+    // ════════════════════════════════════════
     //  EXCEL EXPORT
     // ════════════════════════════════════════
     function exportXLSX(rows, filename) {
@@ -3701,11 +4020,4 @@ ${new Date().toLocaleDateString('vi-VN')}`;
 
       // Default audit criteria while loading
       setTimeout(() => {
-        if (!D.auditCriteria.length && $('audit-criteria-container').innerHTML.includes('Đang tải'))
-          $('audit-criteria-container').innerHTML = '<div class="empty-state" style="padding:12px">Đồng bộ để tải tiêu chí</div>';
-      }, 3000);
-    })();
-  </script>
-</body>
-
-</html>
+        if (!D.auditCriteria.length && $('audit-criteria-conta

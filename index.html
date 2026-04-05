@@ -2694,38 +2694,53 @@
     }
 
     async function loadStoreTasks(storeId, sid, silent = false) {
+      const tbody = $(`tbl_${sid}`); if (!tbody) return;
       if (!silent) load('Đang tải danh sách công việc...');
       try {
         let res = await api({ action: 'getStoreTasks', storeId });
-        // Nếu chưa có tasks, tiến hành tạo timeline tự động
+        
+        // Nếu chưa có tasks, tự động nạp timeline mẫu
         if (res.ok && (!res.tasks || !res.tasks.length)) {
-          // Lấy thông tin store từ D.setupStores hoặc D.allStores
-          const idx = parseInt(sid.replace('s_',''));
-          const s = D.setupStores[idx] || (D.allStores && D.allStores.find(x => x.storeId === storeId));
+          console.log('Chưa có tasks, đang tự kích hoạt tạo Timeline cho:', storeId);
+          const s = D.setupStores.find(x => x.storeId === storeId) || 
+                   (D.allStores && D.allStores.find(x => x.storeId === storeId));
           
           if (s && s.storeId) {
-            await api({ action: 'createTimeline', storeId: s.storeId, storeName: s.name, launchDate: s.openDate || s.launchDate });
-            res = await api({ action: 'getStoreTasks', storeId: s.storeId });
+            const createRes = await api({ action: 'createTimeline', storeId: s.storeId, storeName: s.name, launchDate: s.openDate || s.launchDate });
+            if (createRes.ok) {
+              res = await api({ action: 'getStoreTasks', storeId: s.storeId });
+            } else {
+              toast('Không thể khởi tạo timeline: ' + createRes.error, 'twarn');
+            }
           }
         }
         
         if (!silent) unload();
-        const tbody = $(`tbl_${sid}`); 
-        if (tbody && res.ok) {
+        
+        if (res.ok) {
           tbody.innerHTML = ''; 
-          (res.tasks || []).forEach(t => addSetupTaskRow(sid, t));
-          // Cập nhật tiến độ trên card UI
-          const progEl = $(`pct_${sid}`);
-          if (progEl) {
-            const pct = res.progress || 0;
-            progEl.textContent = pct + '%';
-            const c = pct >= 85 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
-            progEl.style.color = c;
+          const tasks = res.tasks || [];
+          if (tasks.length) {
+            tasks.forEach(t => addSetupTaskRow(sid, t));
+          } else {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">⚠️ Không có đầu việc mẫu. Vui lòng kiểm tra sheet MẪU TIMELINE SETUP.</td></tr>';
           }
+          
+          // Cập nhật tiến độ trên card UI
+          const pct = res.progress || 0;
+          const pctEl = $(`pct_${sid}`);
+          if (pctEl) {
+            pctEl.textContent = pct + '%';
+            const c = pct >= 85 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
+            pctEl.style.color = c;
+          }
+        } else {
+           tbody.innerHTML = `<tr><td colspan="6" class="empty-state">❌ Lỗi tải: ${res.error || 'Dữ liệu không phản hồi'}</td></tr>`;
         }
       } catch (e) { 
         if (!silent) unload(); 
         console.error('LoadStoreTasks Error:', e); 
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">❌ Lỗi kết nối server</td></tr>';
       }
     }
 

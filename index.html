@@ -2571,7 +2571,8 @@
 
         const data = await api({ action: 'getSetupStores' });
         if (data.ok) { 
-          D.setupStores = data.setupStores || []; 
+          // Chỉ hiện những cửa hàng chưa hoạt động (đang setup, mới bắt đầu...)
+          D.setupStores = (data.setupStores || []).filter(s => s.status !== 'Đang hoạt động'); 
           renderSetupList(); 
         }
         const cnt = $('setup-cnt'); if (cnt) cnt.textContent = D.setupStores.length;
@@ -2760,11 +2761,17 @@
     }
 
     async function markStoreAsLaunched(storeId, name, sid) {
-      if (!confirm(`Xác nhận ${name} đã khai trương thành công?`)) return;
-      load('Đang cập nhật...');
-      await api({ action: 'markStoreAsLaunched', storeId });
-      unload(); toast(`🎉 Chúc mừng ${name} đã khai trương!`);
-      loadSetupPage(); renderDashboard();
+      if (!confirm(`Xác nhận ${name} đã khai trương thành công?\nCửa hàng sẽ được chuyển trạng thái sang "Đang hoạt động".`)) return;
+      load('Đang cập nhật trạng thái...');
+      const res = await api({ action: 'markStoreAsLaunched', storeId });
+      if (res.ok) {
+        toast(`🎉 Chúc mừng ${name} đã khai trương!`);
+        // Nạp lại toàn bộ dữ liệu để cập nhật danh sách cửa hàng và ẩn khỏi trang setup
+        await syncAll(); 
+      } else {
+        toast('Lỗi cập nhật: ' + (res.error || 'Vui lòng kiểm tra lại Google Sheets'), 'terr');
+      }
+      unload();
     }
 
     async function exportTimelineStore(storeId, name, type) {

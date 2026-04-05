@@ -2301,25 +2301,35 @@
       if (!CFG.scriptUrl) { $('cfg-alert').style.display = 'flex'; setSyncStatus(false, 'Chưa cấu hình'); return; }
       $('cfg-alert').style.display = 'none';
       load('Đang đồng bộ Google Sheets...');
-      const data = await api({ action: 'getData' });
-      if (data.ok) {
-        D.kpi = data.kpi || D.kpi;
-        D.auditList = data.auditList || [];
-        D.setupStores = data.setupStores || [];
-        D.setupStores = data.setupStores || [];
-        D.timeline = data.timeline || [];
-        setSyncStatus(true, 'Đồng bộ ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
-        toast('✅ Đồng bộ thành công!');
-      } else {
-        setSyncStatus(false, 'Lỗi kết nối');
-        toast('❌ ' + (data.error || 'Không kết nối'), 'terr');
+      try {
+        const data = await api({ action: 'getData' });
+        if (data.ok) {
+          // Nạp dữ liệu từ phản hồi tổng hợp
+          D.kpi = data.kpi || D.kpi;
+          D.auditList = data.auditList || [];
+          D.setupStores = data.setupStores || [];
+          D.timeline = data.timeline || [];
+          D.lastSync = data.lastSync;
+          
+          setSyncStatus(true, 'Đồng bộ ' + (data.lastSync || new Date().toLocaleTimeString('vi-VN')));
+          renderDashboard();
+          toast('✅ Đồng bộ thành công!');
+          
+          // Nạp các phần bổ trợ một cách tuần tự và nhẹ nhàng
+          await loadStaff();
+          // Template nạp khi vào trang setup hoặc nạp ngầm không treo
+          api({ action: 'getSetupTemplate' }).then(res => { if(res.ok) D.template = res.template || []; });
+          
+        } else {
+          setSyncStatus(false, 'Lỗi kết nối');
+          toast('❌ ' + (data.error || 'Server không phản hồi'), 'terr');
+        }
+      } catch (e) {
+        console.error('syncAll Error:', e);
+        setSyncStatus(false, 'Lỗi mạng');
+      } finally {
+        unload();
       }
-      unload();
-      renderDashboard();
-      // Parallel loads
-      await Promise.all([loadStores(), loadAuditData(), loadPlans(), loadReports(), loadStaff(), loadAuditCriteria()]);
-      loadSetupPage();
-      setTimeout(aiDashInsight, 1000);
     }
 
     // ════════════════════════════════════════
@@ -2559,8 +2569,10 @@
       load('Đang nạp dữ liệu Setup...');
       try {
         await loadStaff();
-        const tData = await api({ action: 'getSetupTemplate' });
-        if (tData.ok) D.template = tData.template || [];
+        if (!D.template.length) {
+          const tData = await api({ action: 'getSetupTemplate' });
+          if (tData.ok) D.template = tData.template || [];
+        }
         
         const phases = [...new Set(D.template.map(t => (t.phase || '').trim().toUpperCase()).filter(Boolean))];
         const phSel = $('setup-phase-filter');
@@ -2571,13 +2583,16 @@
 
         const data = await api({ action: 'getSetupStores' });
         if (data.ok) { 
-          // Chỉ hiện những cửa hàng chưa hoạt động (đang setup, mới bắt đầu...)
           D.setupStores = (data.setupStores || []).filter(s => s.status !== 'Đang hoạt động'); 
           renderSetupList(); 
         }
         const cnt = $('setup-cnt'); if (cnt) cnt.textContent = D.setupStores.length;
-      } catch (e) { toast('Lỗi tải trang Setup: ' + e.message, 'terr'); }
-      unload();
+      } catch (e) {
+        console.error('loadSetupPage Error:', e);
+        toast('Lỗi tải trang Setup', 'terr');
+      } finally {
+        unload();
+      }
     }
 
     function renderSetupList() {

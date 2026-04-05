@@ -2535,7 +2535,7 @@
           D.staffList = rawStaff.filter(s => s && (s.name || s.HoTen));
           // Chuẩn hóa tên trường nếu cần (ví dụ từ HoTen sang name)
           D.staffList.forEach(s => { if (s.HoTen && !s.name) s.name = s.HoTen; });
-          console.log('✅ Staff list ready:', D.staffList.length, D.staffList[0]);
+          console.log('✅ Staff list ready:', D.staffList.length);
         }
       } catch (e) { console.error('Staff Load Error:', e); }
     }
@@ -2694,20 +2694,39 @@
     }
 
     async function loadStoreTasks(storeId, sid, silent = false) {
-      if (!silent) load('Đang tải danh sách...');
+      if (!silent) load('Đang tải danh sách công việc...');
       try {
         let res = await api({ action: 'getStoreTasks', storeId });
+        // Nếu chưa có tasks, tiến hành tạo timeline tự động
         if (res.ok && (!res.tasks || !res.tasks.length)) {
-          const s = D.setupStores[parseInt(sid.replace('s_',''))];
-          await api({ action: 'createTimeline', storeId, storeName: s.name, launchDate: s.openDate });
-          res = await api({ action: 'getStoreTasks', storeId });
+          // Lấy thông tin store từ D.setupStores hoặc D.allStores
+          const idx = parseInt(sid.replace('s_',''));
+          const s = D.setupStores[idx] || (D.allStores && D.allStores.find(x => x.storeId === storeId));
+          
+          if (s && s.storeId) {
+            await api({ action: 'createTimeline', storeId: s.storeId, storeName: s.name, launchDate: s.openDate || s.launchDate });
+            res = await api({ action: 'getStoreTasks', storeId: s.storeId });
+          }
         }
+        
         if (!silent) unload();
-        const tbody = $(`tbl_${sid}`); if (tbody && res.ok) {
-          tbody.innerHTML = ''; (res.tasks || []).forEach(t => addSetupTaskRow(sid, t));
-          recalcSetupProgressTable(sid, parseInt(sid.replace('s_','')));
+        const tbody = $(`tbl_${sid}`); 
+        if (tbody && res.ok) {
+          tbody.innerHTML = ''; 
+          (res.tasks || []).forEach(t => addSetupTaskRow(sid, t));
+          // Cập nhật tiến độ trên card UI
+          const progEl = $(`pct_${sid}`);
+          if (progEl) {
+            const pct = res.progress || 0;
+            progEl.textContent = pct + '%';
+            const c = pct >= 85 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
+            progEl.style.color = c;
+          }
         }
-      } catch (e) { if (!silent) unload(); console.error(e); }
+      } catch (e) { 
+        if (!silent) unload(); 
+        console.error('LoadStoreTasks Error:', e); 
+      }
     }
 
     function recalcStoreTimelineDates(sid, newLaunch) {
@@ -2766,7 +2785,6 @@
       const res = await api({ action: 'markStoreAsLaunched', storeId });
       if (res.ok) {
         toast(`🎉 Chúc mừng ${name} đã khai trương!`);
-        // Nạp lại toàn bộ dữ liệu để cập nhật danh sách cửa hàng và ẩn khỏi trang setup
         await syncAll(); 
       } else {
         toast('Lỗi cập nhật: ' + (res.error || 'Vui lòng kiểm tra lại Google Sheets'), 'terr');

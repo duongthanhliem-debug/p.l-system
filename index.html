@@ -1277,6 +1277,7 @@
         <button class="nbtn" onclick="syncAll()">🔄 Đồng bộ</button>
         <button class="nbtn nbtn-gold" onclick="openSettings()">⚙️ Cài đặt</button>
         <a href="https://phuctea-pl.vercel.app" target="_blank" class="npl" id="pl-btn">📊 P&L Hub</a>
+        <a href="https://hrm-one-delta.vercel.app" target="_blank" class="npl" style="background:var(--teal);color:#fff">🗄️ Data Core</a>
         <div class="navatar" id="nav-avatar" onclick="openModal('modal-profile')" title="Thông tin cá nhân">DL</div>
       </div>
     </div>
@@ -2766,12 +2767,18 @@
         await loadStaff();
         await loadEmployees();
 
-        // Always reload template to get fresh phase list
+        // Always reload fresh template — get phases list from server
         const tData = await api({ action: 'getSetupTemplate' });
         if (tData.ok) {
           D.template = tData.template || [];
-          // Store server-returned phases (Bug 1+6 fix)
-          D.templatePhases = tData.phases || [...new Set(D.template.map(t => (t.phase||'').trim().toUpperCase()).filter(Boolean))];
+          // Server returns phases[] in insertion order from sheet
+          D.templatePhases = tData.phases || [...new Set(D.template.map(t => (t.phase||'').toUpperCase()).filter(Boolean))];
+          // Build phase filter immediately from template
+          _rebuildPhaseFilter(D.templatePhases);
+        } else {
+          console.warn('getSetupTemplate failed:', tData.error);
+          D.template = [];
+          D.templatePhases = [];
         }
 
         const data = await api({ action: 'getSetupStores' });
@@ -2782,7 +2789,7 @@
         const cnt = $('setup-cnt'); if (cnt) cnt.textContent = D.setupStores.length;
       } catch (e) {
         console.error('loadSetupPage Error:', e);
-        toast('Lỗi tải trang Setup', 'terr');
+        toast('Lỗi tải trang Setup: ' + e.message, 'terr');
       } finally {
         unload();
       }
@@ -2838,6 +2845,7 @@
               <button class="btn bo bsm" onclick="addSetupTaskRow('${sid}',{isNew:true})">+ Thêm việc</button>
             </div>
             <div style="display:flex;gap:8px">
+              <button class="btn bo bsm" onclick="rebuildTimeline('${s.storeId}','${s.name}','${sid}')">🔄 Tạo lại TL</button>
               <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}','excel')">📊 Excel</button>
               <button class="btn bo bsm" onclick="exportTimelineStore('${s.storeId}','${s.name}','pdf')">📄 PDF</button>
               <button class="btn bo bsm" onclick="markStoreAsLaunched('${s.storeId}','${s.name}','${sid}')">🎉 Đã KT</button>
@@ -2952,16 +2960,17 @@
       try {
         let res = await api({ action: 'getStoreTasks', storeId });
 
-        // Nếu chưa có tasks, tự động nạp timeline mẫu
+        // If no tasks yet, auto-create timeline from template
         if (res.ok && (!res.tasks || !res.tasks.length)) {
           const s = D.setupStores.find(x => x.storeId === storeId) ||
             (D.allStores && D.allStores.find(x => x.storeId === storeId));
           if (s && s.storeId) {
             const createRes = await api({ action: 'createTimeline', storeId: s.storeId, storeName: s.name, launchDate: s.openDate || s.launchDate });
-            if (createRes.ok) {
+            if (createRes.ok && createRes.total) {
+              toast('✅ Đã tạo ' + createRes.total + ' tasks cho ' + s.name);
               res = await api({ action: 'getStoreTasks', storeId: s.storeId });
-            } else {
-              toast('Không thể khởi tạo timeline: ' + createRes.error, 'twarn');
+            } else if (!createRes.ok) {
+              toast('⚠️ ' + (createRes.error || 'Lỗi tạo timeline'), 'twarn');
             }
           }
         }
@@ -2972,23 +2981,26 @@
           tbody.innerHTML = '';
           const tasks = res.tasks || [];
           if (tasks.length) {
-            // BUG 1+6 FIX: Collect all unique phases from ACTUAL task data
-            const taskPhases = [...new Set(tasks.map(t => (t.phase || '').trim().toUpperCase()).filter(Boolean))];
-            // Merge with template phases and update the filter dropdown
-            const allPhases = [...new Set([...(D.templatePhases || []), ...taskPhases])];
+            // Collect unique phases from actual task data (in order)
+            const taskPhases = [];
+            tasks.forEach(t => {
+              const ph = (t.phase || '').trim().toUpperCase();
+              if (ph && !taskPhases.includes(ph)) taskPhases.push(ph);
+            });
+            // Merge with template phases, preserving template order
+            const tplPhases = D.templatePhases || [];
+            const allPhases = [...tplPhases];
+            taskPhases.forEach(p => { if (!allPhases.includes(p)) allPhases.push(p); });
             D.templatePhases = allPhases;
             _rebuildPhaseFilter(allPhases);
 
             tasks.forEach(t => addSetupTaskRow(sid, t));
           } else {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">⚠️ Không có đầu việc mẫu. Vui lòng kiểm tra sheet MẪU TIMELINE SETUP.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">⚠️ Không có task. Kiểm tra sheet MẪU TIMELINE SETUP.</td></tr>';
           }
-
-          // Update progress on card UI
-          const pct = res.progress || 0;
-          _updateSetupCardProgress(sid, pct);
+          _updateSetupCardProgress(sid, res.progress || 0);
         } else {
-          tbody.innerHTML = `<tr><td colspan="6" class="empty-state">❌ Lỗi tải: ${res.error || 'Dữ liệu không phản hồi'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="empty-state">❌ Lỗi: ${res.error || 'Không phản hồi'}</td></tr>`;
         }
       } catch (e) {
         if (!silent) unload();
@@ -3132,6 +3144,24 @@
       const done = [...rows].filter(r => r.querySelector('.t-done').classList.contains('bg2')).length;
       const pct = rows.length ? Math.round(done / rows.length * 100) : 0;
       _updateSetupCardProgress(sid, pct);
+    }
+
+    // Rebuild timeline from scratch — force delete and recreate
+    async function rebuildTimeline(storeId, name, sid) {
+      if (!confirm('Tạo lại toàn bộ timeline cho ' + name + '?\n\n⚠️ Timeline hiện tại sẽ bị XÓA và tạo mới từ mẫu.')) return;
+      load('Đang xóa và tạo lại timeline...');
+      // Delete existing TL sheet via markAsLaunched then recreate
+      const delRes = await api({ action: 'deleteStoreTimeline', storeId });
+      const s = D.setupStores.find(x => x.storeId === storeId);
+      const launchDate = s ? (s.openDate || s.launchDate || '') : '';
+      const createRes = await api({ action: 'createTimeline', storeId, storeName: name, launchDate, forceRebuild: true });
+      unload();
+      if (createRes.ok) {
+        toast('✅ Đã tạo lại ' + (createRes.total || '') + ' tasks cho ' + name);
+        await loadStoreTasks(storeId, sid, false);
+      } else {
+        toast('❌ ' + (createRes.error || 'Lỗi tạo lại timeline'), 'terr');
+      }
     }
 
     async function markStoreAsLaunched(storeId, name, sid) {

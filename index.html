@@ -2769,16 +2769,22 @@
 
         // Always reload fresh template — get phases list from server
         const tData = await api({ action: 'getSetupTemplate' });
-        if (tData.ok) {
+        if (tData.ok && tData.template && tData.template.length > 0) {
           D.template = tData.template || [];
-          // Server returns phases[] in insertion order from sheet
-          D.templatePhases = tData.phases || [...new Set(D.template.map(t => (t.phase||'').toUpperCase()).filter(Boolean))];
+          // Derive phases from actual template data (flat structure, no groups)
+          // tData.phases is insertion-order from sheet, fallback to deriving from template tasks
+          const derivedPhases = tData.phases && tData.phases.length > 0
+            ? tData.phases
+            : [...new Set(D.template.map(t => (t.phase||'').toUpperCase()).filter(Boolean))];
+          D.templatePhases = derivedPhases;
           // Build phase filter immediately from template
           _rebuildPhaseFilter(D.templatePhases);
+          console.log('✅ Template loaded:', D.template.length, 'tasks,', D.templatePhases.length, 'phases:', D.templatePhases.join(', '));
         } else {
-          console.warn('getSetupTemplate failed:', tData.error);
+          console.warn('getSetupTemplate failed or empty:', tData.error || 'No data');
           D.template = [];
           D.templatePhases = [];
+          // Phase filter will be rebuilt from actual task data when loadStoreTasks runs
         }
 
         const data = await api({ action: 'getSetupStores' });
@@ -2981,18 +2987,21 @@
           tbody.innerHTML = '';
           const tasks = res.tasks || [];
           if (tasks.length) {
-            // Collect unique phases from actual task data (in order)
+            // Collect unique phases from actual task data (in order) — flat data, no groups
             const taskPhases = [];
             tasks.forEach(t => {
               const ph = (t.phase || '').trim().toUpperCase();
               if (ph && !taskPhases.includes(ph)) taskPhases.push(ph);
             });
-            // Merge with template phases, preserving template order
-            const tplPhases = D.templatePhases || [];
-            const allPhases = [...tplPhases];
-            taskPhases.forEach(p => { if (!allPhases.includes(p)) allPhases.push(p); });
-            D.templatePhases = allPhases;
-            _rebuildPhaseFilter(allPhases);
+            // Always rebuild phase filter from real task data — do NOT rely on templatePhases
+            // which may be empty or stale if getSetupTemplate failed/returned partial data
+            if (taskPhases.length > 0) {
+              // Also merge any phases from other stores already loaded (preserve cross-store phases)
+              const existing = D.templatePhases || [];
+              existing.forEach(p => { if (!taskPhases.includes(p)) taskPhases.push(p); });
+              D.templatePhases = taskPhases;
+            }
+            _rebuildPhaseFilter(D.templatePhases || taskPhases);
 
             tasks.forEach(t => addSetupTaskRow(sid, t));
           } else {
@@ -3028,9 +3037,17 @@
       if (bar) { bar.style.width = pct + '%'; bar.style.background = c; }
       const bdg = $(`bdg_${sid}`);
       if (bdg) { bdg.className = 'bdg ' + (pct >= 100 ? 'bg2' : 'by2'); bdg.textContent = pct >= 100 ? 'Sẵn sàng' : 'Chưa xong'; }
-      // Update local store data
+      // Update local D.setupStores data
       const si = parseInt(sid.replace('s_', ''));
       if (D.setupStores[si]) D.setupStores[si].progress = pct;
+      // FIX: Also sync to _allStores so Module Cửa hàng renders the correct % realtime
+      if (D.setupStores[si] && D.setupStores[si].storeId) {
+        const storeId = D.setupStores[si].storeId;
+        const storeEntry = (_allStores || []).find(s => s.storeId === storeId);
+        if (storeEntry) storeEntry.setupProgress = pct;
+        // Also update Dashboard setup-progress-dash if visible
+        renderDashboard();
+      }
     }
 
     async function recalcStoreTimelineDates(sid, newLaunchISO) {
@@ -4226,6 +4243,10 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
     //  VIỆC CỦA TÔI (BUG 2 FIX)
     // ════════════════════════════════════════
     async function loadMyTasks() {
+      // FIX: Ensure employees are loaded before trying to use the dropdown
+      if (!D.employees || D.employees.length === 0) {
+        await loadEmployees();
+      }
       const userDash = $('mock-user-select');
       const userFull = $('mytask-user-select');
       // Sync selections – prefer the full page selector when on that page

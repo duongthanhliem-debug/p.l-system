@@ -95,6 +95,10 @@
       }
     }
 
+    .t-task { white-space: normal !important; word-break: break-word; overflow-wrap: break-word; }
+    .t-ic, .t-support { white-space: normal !important; }
+    .t-row td { vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
+    .t-row td input.fc, .t-row td select.fc { white-space: normal; overflow: visible; text-overflow: unset; }
     .load-msg {
       font-size: 13px;
       color: var(--gray);
@@ -1290,7 +1294,7 @@
       <button class="ntab" onclick="goPage('kehoach',this)">🎯 Kế hoạch</button>
       <button class="ntab" onclick="goPage('baocao',this)">📋 Báo cáo</button>
       <button class="ntab" onclick="goPage('ai',this)">🤖 AI</button>
-      <button class="ntab" onclick="goPage('mytasks',this);loadMyTasks()">📌 Việc Của Tôi</button>
+      <button class="ntab" onclick="goPage('mytasks',this);loadMyTasks()">📌 Việc Cần Làm</button>
     </div>
   </nav>
 
@@ -1383,7 +1387,7 @@
     <!-- VIỆC CỦA TÔI - Dashboard widget -->
     <div class="card" id="my-tasks-widget" style="margin-top:0">
       <div class="ch">
-        <span class="ct">📌 Việc Của Tôi</span>
+        <span class="ct">📌 Việc Cần Làm</span>
         <div style="display:flex;gap:6px;align-items:center">
           <select class="fc bsm" id="mock-user-select" style="min-width:160px" onchange="loadMyTasks()">
             <option value="">-- Chọn nhân sự --</option>
@@ -1500,9 +1504,9 @@
         <div class="kc warn">Đang triển khai</div>
       </div>
       <div class="kpi">
-        <div class="kl">Khai trương tháng này</div>
+        <div class="kl">Khai trương tháng <span id="kt-month-label"></span></div>
         <div class="kv" style="color:var(--green)" id="kt-cnt">–</div>
-        <div class="kc info" id="kt-plan" style="font-size:10px">Theo kế hoạch quý</div>
+        <div class="kc info" id="kt-plan" style="font-size:10px">Cửa hàng mở trong tháng hiện tại</div>
       </div>
       <div class="kpi">
         <div class="kl">Mục tiêu 2026</div>
@@ -1867,12 +1871,6 @@
     </div>
     <div id="staff-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
     <!-- Training -->
-    <div class="card" style="margin-top:16px">
-      <div class="ch"><span class="ct">Phát triển nhân sự tháng này</span><span id="training-month-label"
-          style="font-size:12px;color:var(--gray)"></span></div>
-      <div class="cb" id="training-section">
-        <div class="empty-state">Đồng bộ để xem kế hoạch đào tạo</div>
-      </div>
     </div>
     <!-- Pending -->
     <div id="pending-section" style="display:none">
@@ -1910,7 +1908,7 @@
       <div class="cb">
         <div class="fr">
           <div class="fg"><label class="fl"><span id="plan-period-label">Tháng</span> kế hoạch *</label>
-            <input class="fc" id="plan-month" placeholder="VD: Tháng 5/2026 hoặc Quý 2/2026"></div>
+            <input class="fc" type="month" id="plan-month" placeholder="yyyy-mm" onchange="autoFillPlanTitle()"></div>
           <div class="fg"><label class="fl">Tiêu đề</label>
             <input class="fc" id="plan-title" placeholder="Kế hoạch tháng 5/2026"></div>
         </div>
@@ -2122,12 +2120,16 @@
   <div class="page" id="pg-mytasks">
     <div class="ph">
       <div>
-        <div class="pt">📌 Việc Của Tôi</div>
-        <div class="ps">Tất cả công việc chưa hoàn thành theo IC – đồng bộ từ timeline Google Sheets</div>
+        <div class="pt">📌 Việc Cần Làm</div>
+        <div class="ps">Tổng hợp công việc chưa hoàn thành theo IC – Setup · Kế hoạch · Audit</div>
       </div>
       <div class="fb">
         <select class="fc" id="mytask-user-select" style="min-width:200px" onchange="loadMyTasks()">
           <option value="">-- Chọn nhân sự --</option>
+        </select>
+        <select class="fc bsm" id="mytask-done-filter" onchange="filterMyTasks()" style="min-width:150px">
+          <option value="active">Đang làm</option>
+          <option value="done">Đã hoàn thành</option>
         </select>
         <button class="btn bo bsm" onclick="loadMyTasks()">🔄 Tải lại</button>
       </div>
@@ -2150,6 +2152,14 @@
         <div class="kv" style="color:var(--gold)" id="mytask-today">–</div>
         <div class="kc warn">Cần hoàn thành</div>
       </div>
+    </div>
+
+    <!-- Source tabs -->
+    <div class="ptabs" style="margin-bottom:8px">
+      <button class="ptab on" id="mtab-all-btn"   onclick="filterMyTasksSource('all',this)">📋 Tất cả</button>
+      <button class="ptab"    id="mtab-setup-btn"  onclick="filterMyTasksSource('setup',this)">🏪 Setup</button>
+      <button class="ptab"    id="mtab-plan-btn"   onclick="filterMyTasksSource('plan',this)">📅 Kế hoạch</button>
+      <button class="ptab"    id="mtab-audit-btn"  onclick="filterMyTasksSource('audit',this)">✅ Audit</button>
     </div>
 
     <!-- Task list -->
@@ -2320,7 +2330,18 @@
             placeholder="Mật khẩu đăng nhập"></div>
       </div>
       <div class="fg"><label class="fl">Ghi chú</label><textarea class="fc" id="sf-note" rows="2"></textarea></div>
-      <div style="display:flex;gap:7px">
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+      <div style="font-size:11px;font-weight:700;color:var(--brown-m);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Thông tin bổ sung</div>
+      <div class="fg"><label class="fl">Nơi thường trú</label><input class="fc" id="sf-permanent-addr" placeholder="Địa chỉ thường trú..."></div>
+      <div class="fg"><label class="fl">Nơi tạm trú</label><input class="fc" id="sf-temp-addr" placeholder="Địa chỉ tạm trú (nếu khác)..."></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Số CCCD</label><input class="fc" id="sf-cccd" placeholder="0123456789xx"></div>
+        <div class="fg"><label class="fl">Ngân hàng</label><input class="fc" id="sf-bank-name" placeholder="Vietcombank / MB..."></div>
+      </div>
+      <div class="fg"><label class="fl">Số tài khoản ngân hàng</label><input class="fc" id="sf-bank-acct" placeholder="Số tài khoản..."></div>
+      <div class="fg"><label class="fl">Link ảnh CCCD mặt trước</label><input class="fc" id="sf-cccd-front" placeholder="URL ảnh Google Drive..."></div>
+      <div class="fg"><label class="fl">Link ảnh CCCD mặt sau</label><input class="fc" id="sf-cccd-back" placeholder="URL ảnh Google Drive..."></div>
+      <div style="display:flex;gap:7px;margin-top:8px">
         <button class="btn bp" style="flex:1" onclick="saveStaffForm()">💾 Lưu lên Sheets</button>
         <button class="btn bo" onclick="closeModal('modal-staff')">Hủy</button>
       </div>
@@ -2591,6 +2612,19 @@
       updateEl('kpi-stores', k.stores || 0);
       updateEl('kpi-new', `${k.newStores || 0}/${k.targetStores || 30}`);
 
+      // Khai trương tháng hiện tại — count allStores with launchDate in current month
+      const _now = new Date(); const _cm = _now.getMonth()+1; const _cy = _now.getFullYear();
+      const ktLabel = $('kt-month-label'); if (ktLabel) ktLabel.textContent = _cm + '/' + _cy;
+      const ktCount = (_allStores || []).filter(s => {
+        if (!s.launchDate) return false;
+        const p = String(s.launchDate).split('/');
+        if (p.length < 3) return false;
+        const d = new Date(+p[2], +p[1]-1, +p[0]);
+        return !isNaN(d.getTime()) && d.getMonth()+1 === _cm && d.getFullYear() === _cy;
+      }).length;
+      const ktEl = $('kt-cnt'); if (ktEl) { ktEl.textContent = ktCount; ktEl.style.color = ktCount>0?'var(--green)':'var(--gray)'; }
+      const ktPlanEl = $('kt-plan'); if (ktPlanEl) ktPlanEl.textContent = ktCount > 0 ? ktCount + ' cửa hàng mở tháng này' : 'Chưa có khai trương';
+
       const p = k.targetStores ? Math.round((k.newStores || 0) / k.targetStores * 100) : 0;
       const subNew = $('kpi-new-sub');
       if (subNew) {
@@ -2609,12 +2643,18 @@
       const reCount = parseInt(k.reauditCount) || 0;
       updateEl('kpi-reaudit', reCount, reCount > 0 ? 'var(--red)' : 'var(--green)');
 
-      // Alerts
+      // Alerts — CCP/RISK cannot be dismissed manually; reaudit can be dismissed
+      if (!D._dismissedDashAlerts) D._dismissedDashAlerts = new Set();
       let ah = '';
       if (reCount > 0) {
-        // New format: use pct; fallback to score for backward compat
         const names = (D.auditList || []).filter(a => (a.pct ?? a.score) < 85).map(a => `${a.store || a.name}(${a.pct ?? a.score}%)`).slice(0, 5).join(', ');
-        ah += `<div class="alert ay">⚠️ <span><strong>${reCount} cửa hàng</strong> cần tái audit: ${names}</span></div>`;
+        const key = 'reaudit_' + reCount;
+        if (!D._dismissedDashAlerts.has(key)) {
+          ah += `<div class="alert ay" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span>⚠️ <strong>${reCount} cửa hàng</strong> cần tái audit: ${names}</span>
+            <button onclick="D._dismissedDashAlerts.add('${key}');this.closest('.alert').remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--gold);flex-shrink:0" title="Đã xử lý, bỏ thông báo">✕</button>
+          </div>`;
+        }
       }
       const alContainer = $('alerts-container');
       if (alContainer) alContainer.innerHTML = ah;
@@ -2652,17 +2692,38 @@
           : D.timeline.map(t => `<div class="tl-item"><div class="tl-dot" style="background:${t.color || 'var(--gray)'}"></div><div><div class="tl-txt">${t.text}</div><div class="tl-time">${t.time}</div></div></div>`).join('');
       }
 
-      // OKR
+      // OKR — filter plans by current month (e.g. "Tháng 4/2026"), show ALL matching plans
       const okrCon = $('okr-container');
-      if (okrCon && D.plans && D.plans.length > 0) {
-        const plan = D.plans[0];
-        const newP = k.newStores && plan.targetStores ? Math.round(k.newStores / plan.targetStores * 100) : 0;
-        const auditP = k.auditAvg && plan.targetAudit ? Math.round(k.auditAvg / plan.targetAudit * 100) : 0;
-        okrCon.innerHTML = `
-          <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Kế hoạch: <strong>${plan.month || '–'}</strong></div>
-          <div class="prog-item"><div class="prog-hd"><span>Mở CH mới (Mục tiêu: ${plan.targetStores || '–'})</span><span style="color:var(--gold);font-weight:700">${k.newStores || 0}/${plan.targetStores || '–'}</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(newP, 100)}%;background:var(--gold)"></div></div></div>
-          <div class="prog-item"><div class="prog-hd"><span>Audit TB (Mục tiêu: ≥${plan.targetAudit || 85}đ)</span><span style="color:var(--blue);font-weight:700">${k.auditAvg || 0}/100</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(auditP, 100)}%;background:var(--blue)"></div></div></div>
-          <div style="margin-top:10px;font-size:12px;color:var(--gray)">Ngân sách dự kiến: <strong style="color:var(--brown)">${plan.budget || 0}tr</strong></div>`;
+      if (okrCon) {
+        const now = new Date();
+        const curM = now.getMonth() + 1; // 1-based
+        const curY = now.getFullYear();
+        // Match plans whose month field contains current month/year
+        const monthPlans = (D.plans || []).filter(p => {
+          const m = (p.month || '').toLowerCase();
+          // Match "tháng 4/2026", "4/2026", "04/2026", "quý" plans for current quarter
+          if (m.includes(String(curY))) {
+            if (m.includes('tháng ' + curM) || m.includes(curM + '/' + curY) ||
+                m.includes((curM < 10 ? '0'+curM : curM) + '/' + curY)) return true;
+          }
+          return false;
+        });
+        const plansToShow = monthPlans.length > 0 ? monthPlans : [];
+        if (plansToShow.length === 0) {
+          okrCon.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px 0">Chưa có kế hoạch tháng ' + curM + '/' + curY + '. Vào module Kế hoạch để tạo.</div>';
+        } else {
+          okrCon.innerHTML = plansToShow.map(plan => {
+            const newP = k.newStores && plan.targetStores ? Math.round(k.newStores / plan.targetStores * 100) : 0;
+            const auditP = k.auditAvg && plan.targetAudit ? Math.round(k.auditAvg / plan.targetAudit * 100) : 0;
+            const budgetFmt = plan.budget ? Number(plan.budget).toLocaleString('vi-VN') : '0';
+            return `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--gray);margin-bottom:8px">📋 <strong>${plan.title || plan.month || '–'}</strong></div>
+              <div class="prog-item"><div class="prog-hd"><span>Mở CH mới (Mục tiêu: ${plan.targetStores || '–'})</span><span style="color:var(--gold);font-weight:700">${k.newStores || 0}/${plan.targetStores || '–'}</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(newP, 100)}%;background:var(--gold)"></div></div></div>
+              <div class="prog-item"><div class="prog-hd"><span>Audit TB (Mục tiêu: ≥${plan.targetAudit || 85}đ)</span><span style="color:var(--blue);font-weight:700">${k.auditAvg || 0}/100</span></div><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(auditP, 100)}%;background:var(--blue)"></div></div></div>
+              <div style="margin-top:8px;font-size:12px;color:var(--gray)">Ngân sách tháng này: <strong style="color:var(--brown)">${budgetFmt} đồng</strong></div>
+            </div>`;
+          }).join('');
+        }
       }
 
       // Date update with safety
@@ -3014,10 +3075,14 @@
       const filter = ($('setup-phase-filter') ? $('setup-phase-filter').value : 'all').toUpperCase();
       const phase = (t.phase || (filter !== 'ALL' ? filter : 'CHUNG')).toUpperCase();
 
-      if (filter !== 'ALL' && phase !== filter && !t.isNew) return;
+      // CRITICAL FIX: Always add the row to DOM (don't skip non-matching phases).
+      // Just hide it if it doesn't match the current filter.
+      // This ensures saveSetupTasks can always collect ALL rows regardless of filter.
+      const isHidden = filter !== 'ALL' && phase !== filter && !t.isNew;
 
       const tr = document.createElement('tr'); tr.className = 't-row';
       tr.dataset.phase = phase;
+      if (isHidden) tr.style.display = 'none';
       const s = D.setupStores[parseInt(sid.replace('s_', ''))] || {};
 
       let dates = { s: '', e: '' };
@@ -3107,6 +3172,9 @@
         if (res.ok) {
           tbody.innerHTML = '';
           const tasks = res.tasks || [];
+          // CRITICAL: Cache ALL tasks (all phases) before filtering for render
+          if (!D._taskCache) D._taskCache = {};
+          D._taskCache[storeId] = tasks;
           if (tasks.length) {
             // Collect unique phases from actual task data (in order) — flat data, no groups
             const taskPhases = [];
@@ -3193,23 +3261,68 @@
     }
 
     async function saveSetupTasks(storeId, sid) {
+      // CRITICAL FIX: Do NOT read only from DOM rows (filtered view may hide phases).
+      // Instead: read ALL tasks from cache, then update only IC/support/dates/status from DOM rows.
       const rows = $(`tbl_${sid}`).querySelectorAll('tr.t-row');
-      const tasks = Array.from(rows).map(r => ({
-        id: r.querySelector('.t-id').value,
-        task: r.querySelector('.t-task').value,
-        phase: r.querySelector('.t-phase').value,
-        ic: (r.querySelector('.t-ic') || { value: '' }).value,
-        supporter: (r.querySelector('.t-support') || { value: '' }).value,
-        startDate: (r.querySelector('.t-s').value || '').split('-').reverse().join('/'),
-        deadline: (r.querySelector('.t-e').value || '').split('-').reverse().join('/'),
-        done: r.querySelector('.t-done').classList.contains('bg2'),
-        note: (r.querySelector('.t-note') || { value: '' }).value
-      }));
+      // Build a map of taskId → DOM fields (what the user actually edited)
+      const domMap = {};
+      Array.from(rows).forEach(r => {
+        const tid = (r.querySelector('.t-id') || {}).value || '';
+        if (!tid) return;
+        domMap[tid] = {
+          ic:        (r.querySelector('.t-ic')      || { value: '' }).value,
+          supporter: (r.querySelector('.t-support') || { value: '' }).value,
+          startDate: (r.querySelector('.t-s')       || { value: '' }).value,
+          deadline:  (r.querySelector('.t-e')       || { value: '' }).value,
+          done:      r.querySelector('.t-done') ? r.querySelector('.t-done').classList.contains('bg2') : false,
+          task:      (r.querySelector('.t-task')    || { value: '' }).value,
+          phase:     (r.querySelector('.t-phase')   || { value: '' }).value,
+          note:      (r.querySelector('.t-note')    || { value: '' }).value,
+        };
+      });
+
+      // Merge DOM changes onto full cached task list (preserves all phases)
+      const cached = (D._taskCache && D._taskCache[storeId]) || [];
+      let tasks;
+      if (cached.length) {
+        tasks = cached.map(t => {
+          const d = domMap[t.id];
+          if (!d) return t; // not in DOM (different phase, hidden) → keep original
+          return {
+            ...t,
+            ic:        d.ic,
+            supporter: d.supporter,
+            startDate: d.startDate ? d.startDate.split('-').reverse().join('/') : t.startDate,
+            deadline:  d.deadline  ? d.deadline.split('-').reverse().join('/')  : t.deadline,
+            done:      d.done,
+            task:      d.task || t.task,
+            phase:     d.phase || t.phase,
+            note:      d.note || t.note,
+          };
+        });
+      } else {
+        // No cache: fall back to DOM-only (all rows must be visible)
+        tasks = Array.from(rows).map(r => ({
+          id:        (r.querySelector('.t-id')      || { value: '' }).value,
+          task:      (r.querySelector('.t-task')    || { value: '' }).value,
+          phase:     (r.querySelector('.t-phase')   || { value: '' }).value,
+          ic:        (r.querySelector('.t-ic')      || { value: '' }).value,
+          supporter: (r.querySelector('.t-support') || { value: '' }).value,
+          startDate: (r.querySelector('.t-s').value || '').split('-').reverse().join('/'),
+          deadline:  (r.querySelector('.t-e').value || '').split('-').reverse().join('/'),
+          done:      r.querySelector('.t-done').classList.contains('bg2'),
+          note:      (r.querySelector('.t-note')   || { value: '' }).value
+        }));
+      }
+
       load('Đang lưu lên Sheets...');
       const res = await api({ action: 'saveStoreTasks', storeId, tasks });
       unload();
       if (res.ok) {
         toast(`✅ Đã lưu ${tasks.length} tasks! Tiến độ: ${res.progress || 0}%`);
+        // Update cache with saved data
+        if (!D._taskCache) D._taskCache = {};
+        D._taskCache[storeId] = tasks;
         _updateSetupCardProgress(sid, res.progress || 0);
       } else toast('❌ ' + (res.error || 'Lỗi lưu'), 'terr');
     }
@@ -3473,10 +3586,24 @@
 
       const bar = $('a-alert-bar');
       if (bar) {
+        if (!D._dismissedAuditAlerts) D._dismissedAuditAlerts = new Set();
         let alerts = '';
-        if (riskStores > 0) alerts += `<div class="alert ar" style="margin-bottom:6px">🚨 <span><strong>${riskStores} cửa hàng vi phạm RISK</strong> – điểm bằng 0. Xử lý ngay!</span></div>`;
-        if (ccpStores  > 0) alerts += `<div class="alert ay" style="margin-bottom:6px">⛔ <span><strong>${ccpStores} cửa hàng vi phạm CCP</strong> – cần hành động trong 48h.</span></div>`;
-        if (reaudit > 0 && !riskStores && !ccpStores) alerts += `<div class="alert ay">⚠️ <span><strong>${reaudit} cửa hàng</strong> dưới 85% cần tái audit.</span></div>`;
+        // CCP/RISK: cannot manually dismiss — auto-cleared when tasks done
+        if (riskStores > 0) alerts += `<div class="alert ar" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+          <span>🚨 <strong>${riskStores} cửa hàng vi phạm RISK</strong> – điểm bằng 0. Xử lý ngay!</span>
+          <small style="color:rgba(0,0,0,.4);margin-left:8px;font-size:10px">Tự động tắt khi hoàn thành task</small>
+        </div>`;
+        if (ccpStores > 0) alerts += `<div class="alert ay" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+          <span>⛔ <strong>${ccpStores} cửa hàng vi phạm CCP</strong> – cần hành động trong 48h.</span>
+          <small style="color:rgba(0,0,0,.4);margin-left:8px;font-size:10px">Tự động tắt khi hoàn thành task</small>
+        </div>`;
+        // Reaudit: can manually dismiss
+        if (reaudit > 0 && !D._dismissedAuditAlerts.has('reaudit_' + reaudit)) {
+          alerts += `<div class="alert ay" style="display:flex;align-items:center;justify-content:space-between">
+            <span>⚠️ <strong>${reaudit} cửa hàng</strong> dưới 85% cần tái audit.</span>
+            <button onclick="D._dismissedAuditAlerts.add('reaudit_${reaudit}');this.closest('.alert').remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--gold);flex-shrink:0" title="Bỏ thông báo thủ công">✕</button>
+          </div>`;
+        }
         bar.innerHTML = alerts;
       }
     }
@@ -3612,12 +3739,11 @@
       load('AI đang phân tích...');
       const aiText = await callAI(`Phân tích KHBA cửa hàng ${store}: điểm ${rec.score}%, rating ${rec.avgRating}/5. Nhận xét: "${rec.comment||'không có'}". Viết ngắn (tối đa 100 từ): điểm cần cải thiện và đề xuất.`);
       unload();
-      // Show in KHBA AI card
       const card = $('k-ai-card'); if (card) card.style.display = '';
       const body = $('k-ai-body'); if (body) body.textContent = `[${store}] ${aiText}`;
     }
 
-    // Reopen last audit detail (for header button)
+    // Reopen last audit detail (for tab button)
     function reopenLastAuditDetail() {
       if (_lastAuditDetailArgs) {
         openAuditDetail(_lastAuditDetailArgs.store, _lastAuditDetailArgs.timestamp, _lastAuditDetailArgs.source);
@@ -3631,10 +3757,6 @@
     let _lastAuditDetailArgs = null;
     async function openAuditDetail(store, timestamp, source) {
       _lastAuditDetailArgs = { store, timestamp, source };
-      // Show the header button when on audit page
-      const btnDetail = $('btn-open-audit-detail');
-      if (btnDetail) btnDetail.style.display = '';
-
       const modal = $('modal-audit-detail');
       const body  = $('audit-detail-body');
       const title = $('audit-detail-title');
@@ -3738,21 +3860,17 @@
             const isOK = ans === 'Đạt' || ans === 'OK';
             const isNA = ans.includes('N/A') || ans === '';
             const isIssue = !isOK && !isNA;
-            // Detect image/drive URLs in the answer
             const urlMatch = ans.match(/(https?:\/\/[^\s,]+)/g) || [];
             const imgUrls = urlMatch.filter(u => u.includes('drive.google') || u.includes('googleusercontent') || /\.(jpg|jpeg|png|gif|webp)/i.test(u));
             const typeEl = item.type === 'CCP'  ? '<span class="bdg br2" style="font-size:9px;padding:1px 4px">CCP</span>'
                          : item.type === 'RISK' ? '<span style="font-size:9px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-weight:600">RISK</span>'
                          : '<span style="font-size:10px;color:var(--gray)">OK</span>';
             const qrBlock = imgUrls.length ? imgUrls.map((u,qi) =>
-              `<img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(u)}" alt="QR ảnh ${qi+1}" title="Quét QR để xem ảnh lỗi" style="width:32px;height:32px;border-radius:3px;cursor:pointer;margin-left:4px" onclick="window.open('${u}','_blank')">`
+              `<img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(u)}" alt="QR" title="Quét QR để xem ảnh lỗi" style="width:32px;height:32px;border-radius:3px;cursor:pointer;margin-left:4px" onclick="window.open('${u}','_blank')">`
             ).join('') : '';
             html += `<tr style="${isIssue?'background:#FEF2F2':''}">
               <td style="color:var(--gray);font-size:10px">${idx===0?grp:''}</td>
-              <td style="${isIssue?'font-weight:600;color:var(--red)':''}">
-                ${item.item}
-                ${qrBlock}
-              </td>
+              <td style="${isIssue?'font-weight:600;color:var(--red)':''}">${item.item}${qrBlock}</td>
               <td>${typeEl}</td>
               <td style="font-weight:600;color:${isNA?'var(--gray)':isOK?'var(--green)':'var(--red)'}">${isNA?'N/A':isOK?'✓ Đạt':'✗ Không đạt'}</td>
               <td style="text-align:right;color:${isNA?'var(--gray)':isOK?'inherit':'var(--red)'}">${isNA?'–':isOK?item.maxPts:0}/${item.maxPts}</td>
@@ -3824,26 +3942,22 @@
 
       // Date: readonly display field (no manual editing)
       if ($('ar-date-display')) $('ar-date-display').value = fmtViDate(rec.timestamp || rec.date || '');
-      // Also sync hidden date field for compat with genAuditReport
       if ($('ar-date')) $('ar-date').value = rec.date || rec.timestamp || '';
       // Auditor
       const audName = safeAuditorName(rec.auditor || '');
       if ($('ar-auditor')) $('ar-auditor').value = audName !== '–' ? audName : 'Dương Thanh Liêm';
-      // Note & action plan: always reset when session changes, blank for KHBA
-      // Clear userEdited flag so new session's data loads fresh
+      // Note & action plan: always reset on session change; blank for KHBA
       const noteEl = $('ar-note'), actionEl = $('ar-action');
-      if (noteEl)   { noteEl.removeAttribute('data-user-edited');   noteEl.dataset.userEdited = ''; delete noteEl.dataset.userEdited; }
-      if (actionEl) { actionEl.removeAttribute('data-user-edited'); actionEl.dataset.userEdited = ''; delete actionEl.dataset.userEdited; }
+      if (noteEl)   { delete noteEl.dataset.userEdited; }
+      if (actionEl) { delete actionEl.dataset.userEdited; }
       if (src === 'khba') {
-        // KHBA: leave note and action plan blank (editable)
         if (noteEl)   noteEl.value   = '';
         if (actionEl) actionEl.value = '';
       } else {
-        // Direct audit: pull from rec data (mapped from col BY/BZ in GS)
         if (noteEl)   noteEl.value   = rec.note       || '';
         if (actionEl) actionEl.value = rec.actionPlan || '';
       }
-      // Auto-fill email from store DB (col B in CuaHang = name, col E = email)
+      // Auto-fill email from store DB
       const storeObj = (_allStores||[]).find(s=>s.name===store);
       if ($('ar-email') && !$('ar-email').dataset.userEdited) {
         $('ar-email').value = (storeObj && storeObj.email) ? storeObj.email : '';
@@ -3878,10 +3992,9 @@
       });
     }
 
-    // Schedule: ALL stores from DB (CuaHang sheet, col A=storeId, col B=name)
+    // Schedule: ALL stores from DB (CuaHang sheet col A=storeId, col B=name)
     function populateScheduleStores() {
       const sel = $('sched-store'); if (!sel) return;
-      // Use only _allStores from DB (full CuaHang list), sorted by name
       const allNames = [...new Set((_allStores||[]).map(s=>s.name).filter(Boolean))].sort();
       const cur = sel.value;
       sel.innerHTML = '<option value="">-- Chọn cửa hàng --</option>' +
@@ -4111,49 +4224,19 @@ Dương Thanh Liêm – Operations Phúc Tea`;
     // ── sendAuditReportEmail ─────────────────────────────
     async function sendAuditReportEmail() {
       if (!_auditReportText) { toast('Tạo biên bản trước','twarn'); return; }
-      const store = ($('ar-store')||{}).value;
-      const sessSel = $('ar-session');
-      const ts  = sessSel ? sessSel.value : '';
-      const src = sessSel ? ((sessSel.options[sessSel.selectedIndex]||{}).dataset||{}).src || 'direct' : 'direct';
-
+      const store=($('ar-store')||{}).value;
       let to = ($('ar-email')||{}).value || '';
       if (!to) {
-        const storeObj = (_allStores||[]).find(s=>s.name===store);
+        const storeObj=(_allStores||[]).find(s=>s.name===store);
         to = (storeObj&&storeObj.email) ? storeObj.email : '';
-        to = prompt('Email cửa hàng/chủ chi nhánh:', to) || '';
+        to = prompt('Email cửa hàng/chủ chi nhánh:',to) || '';
       }
       if (!to) return;
-
-      // Build detailed checklist body to include as "PDF đính kèm" in email
-      let detailBody = '';
-      if (src !== 'khba') {
-        const rec = (_auditDirectData.allResults||[]).find(r=>r.store===store&&(!ts||r.timestamp===ts))
-                 || (_auditDirectData.auditList||[]).find(r=>r.store===store);
-        if (rec) {
-          const issues = rec.issues||[], checklist = rec.checklist||[], answers = rec.answers||{};
-          const rows = checklist.map(item=>{
-            const ans = answers[item.id]||'';
-            const isOK = ans==='Đạt'||ans==='OK', isNA = ans.includes('N/A')||ans==='';
-            const isIssue = issues.some(i=>i.id===item.id);
-            const urlMatch = ans.match(/(https?:\/\/[^\s,]+)/g)||[];
-            const imgUrls = urlMatch.filter(u=>u.includes('drive.google')||u.includes('googleusercontent')||/\.(jpg|jpeg|png|gif|webp)/i.test(u));
-            const qrImgs = imgUrls.map((u,qi)=>`<img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(u)}" style="width:40px;height:40px;vertical-align:middle" title="Quét QR xem ảnh lỗi ${qi+1}">`).join(' ');
-            return `<tr style="background:${isIssue?'#FEF2F2':''}"><td style="padding:4px 6px;border:1px solid #e8e0d4;font-size:11px;color:#718096">${item.group}</td><td style="padding:4px 6px;border:1px solid #e8e0d4;font-size:11px;${isIssue?'color:#dc2626;font-weight:600':''}">${item.item} ${qrImgs}</td><td style="padding:4px 6px;border:1px solid #e8e0d4;font-size:11px">${item.type}</td><td style="padding:4px 6px;border:1px solid #e8e0d4;font-size:11px;font-weight:600;color:${isNA?'#718096':isOK?'#166534':'#dc2626'}">${isNA?'N/A':isOK?'✓ Đạt':'✗ Không đạt'}</td><td style="padding:4px 6px;border:1px solid #e8e0d4;font-size:11px;text-align:right">${isNA?'–':isOK?item.maxPts:0}/${item.maxPts}</td></tr>`;
-          }).join('');
-          detailBody = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCHI TIẾT CHECKLIST AUDIT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[Xem chi tiết đầy đủ trong bảng checklist đính kèm dưới đây]\n\nNhóm | Hạng mục | Loại | Kết quả | Điểm\n${checklist.map(item=>{const ans=answers[item.id]||'';const isOK=ans==='Đạt'||ans==='OK',isNA=ans.includes('N/A')||ans==='';return `${item.group} | ${item.item} | ${item.type} | ${isNA?'N/A':isOK?'Đạt':'Không đạt'} | ${isNA?'–':isOK?item.maxPts:0}/${item.maxPts}`;}).join('\n')}`;
-        }
-      }
-
       load('Đang gửi biên bản...');
-      const res = await api({
-        action: 'sendEmail',
-        to,
-        subject: `Biên bản Audit – ${store} – ${new Date().toLocaleDateString('vi-VN')}`,
-        body: _auditReportText + detailBody
-      });
+      const res=await api({action:'sendEmail',to,subject:`Biên bản Audit – ${store} – ${new Date().toLocaleDateString('vi-VN')}`,body:_auditReportText});
       unload();
-      if (res.ok) toast('✅ Đã gửi biên bản đến ' + to);
-      else toast('❌ ' + (res.error||'Lỗi gửi email'), 'terr');
+      if(res.ok) toast('✅ Đã gửi biên bản đến '+to);
+      else toast('❌ '+(res.error||'Lỗi gửi email'),'terr');
     }
 
     // ── printDetailPDF ───────────────────────────────────
@@ -4282,7 +4365,7 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       if (D.plans.length > 0) {
         const plan = D.plans[0];
         const content = (plan.content && typeof plan.content === 'object') ? JSON.stringify(plan.content) : String(plan.content || '');
-        $('training-month-label').textContent = plan.month || '';
+        // training-month-label removed
         $('training-section').innerHTML = `
       <div class="alert ab" style="margin-bottom:10px">📚 <span>Đào tạo từ kế hoạch <strong>${plan.month || '–'}</strong>. Ngân sách: ${plan.budget || 0}tr</span></div>
       <div style="font-size:13px;color:var(--brown);line-height:1.8;white-space:pre-wrap">${content}</div>`;
@@ -4291,7 +4374,7 @@ Dương Thanh Liêm – Operations Phúc Tea`;
 
     function openStaffModal(data) {
       currentStaffEdit = null;
-      ['sf-id', 'sf-name', 'sf-phone', 'sf-email', 'sf-position', 'sf-store', 'sf-note'].forEach(id => { $(id).value = id === 'sf-store' ? 'Hệ Thống' : ''; });
+      ['sf-id', 'sf-name', 'sf-phone', 'sf-email', 'sf-position', 'sf-store', 'sf-note', 'sf-permanent-addr', 'sf-temp-addr', 'sf-cccd', 'sf-bank-name', 'sf-bank-acct', 'sf-cccd-front', 'sf-cccd-back'].forEach(id => { const el = $(id); if (el) el.value = id === 'sf-store' ? 'Hệ Thống' : ''; });
       ['sf-dob', 'sf-start'].forEach(id => { $(id).value = ''; });
       $('sf-gender').value = 'Nam'; $('sf-role').value = 'User'; $('sf-status').value = 'Đang cộng tác'; $('sf-pw').value = '';
       $('staff-modal-title').textContent = '+ Thêm nhân viên';
@@ -4305,6 +4388,13 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       $('sf-gender').value = s.gender || 'Nam'; $('sf-position').value = s.position || '';
       $('sf-store').value = s.store || 'Hệ Thống'; $('sf-role').value = s.role || 'User';
       $('sf-status').value = s.status || 'Đang cộng tác'; $('sf-note').value = s.note || '';
+      if ($('sf-permanent-addr')) $('sf-permanent-addr').value = s.permanentAddr || '';
+      if ($('sf-temp-addr'))      $('sf-temp-addr').value      = s.tempAddr || '';
+      if ($('sf-cccd'))           $('sf-cccd').value           = s.cccd || '';
+      if ($('sf-bank-name'))      $('sf-bank-name').value      = s.bankName || '';
+      if ($('sf-bank-acct'))      $('sf-bank-acct').value      = s.bankAcct || '';
+      if ($('sf-cccd-front'))     $('sf-cccd-front').value     = s.cccdFront || '';
+      if ($('sf-cccd-back'))      $('sf-cccd-back').value      = s.cccdBack  || '';
       $('sf-pw').value = '';
       if (s.dob) $('sf-dob').value = s.dob.split('/').reverse().join('-');
       if (s.startDate) $('sf-start').value = s.startDate.split('/').reverse().join('-');
@@ -4326,7 +4416,14 @@ Dương Thanh Liêm – Operations Phúc Tea`;
         startDate: $('sf-start').value, position: $('sf-position').value,
         store: $('sf-store').value || 'Hệ Thống', role: $('sf-role').value,
         status: $('sf-status').value, note: $('sf-note').value,
-        password: $('sf-pw').value || undefined, avatar: currentStaffEdit?.avatar || ''
+        password: $('sf-pw').value || undefined, avatar: currentStaffEdit?.avatar || '',
+        permanentAddr: ($('sf-permanent-addr')||{value:''}).value,
+        tempAddr:      ($('sf-temp-addr')||{value:''}).value,
+        cccd:          ($('sf-cccd')||{value:''}).value,
+        bankName:      ($('sf-bank-name')||{value:''}).value,
+        bankAcct:      ($('sf-bank-acct')||{value:''}).value,
+        cccdFront:     ($('sf-cccd-front')||{value:''}).value,
+        cccdBack:      ($('sf-cccd-back')||{value:''}).value,
       };
       const res = await api({ action: 'saveStaff', data: d });
       unload();
@@ -4369,8 +4466,28 @@ Dương Thanh Liêm – Operations Phúc Tea`;
     let _planGroups = [];
     let _currentPlanId = null;
 
-    function updatePlanPeriodLabel() {
-      const v = $('plan-period-type') ? $('plan-period-type').value : 'month';
+    function autoFillPlanTitle() {
+      const mv = ($('plan-month')||{}).value || '';
+      const titleEl = $('plan-title');
+      if (titleEl && !titleEl.value && mv) {
+        // mv format is "yyyy-mm", display as "Tháng M/YYYY"
+        const parts = mv.split('-');
+        if (parts.length === 2) {
+          titleEl.value = `Kế hoạch tháng ${parseInt(parts[1])}/${parts[0]}`;
+        }
+      }
+    }
+
+    // Format "yyyy-mm" → "Tháng M/YYYY" for display
+    function fmtPlanMonth(val) {
+      if (!val) return '–';
+      // Already formatted like "Tháng 4/2026"
+      if (val.includes('Tháng') || val.includes('Quý')) return val;
+      // yyyy-mm format
+      const p = val.split('-');
+      if (p.length === 2) return `Tháng ${parseInt(p[1])}/${p[0]}`;
+      return val;
+    }
       const el = $('plan-period-label');
       if (el) el.textContent = v === 'quarter' ? 'Quý' : 'Tháng';
     }
@@ -4451,7 +4568,7 @@ Dương Thanh Liêm – Operations Phúc Tea`;
                   <td><input class="fc pt-kpi" value="${(t.kpi||'').replace(/"/g,'&quot;')}" placeholder="Số/%" style="padding:3px 6px;font-size:12px"></td>
                   <td><input class="fc pt-budget" value="${(t.budget||'').replace(/"/g,'&quot;')}" placeholder="tr đồng" style="padding:3px 6px;font-size:12px"></td>
                   <td><select class="fc pt-ic" style="padding:3px 6px;font-size:12px">${activeStaffOpt(t.ic)}</select></td>
-                  <td><input class="fc pt-time" value="${(t.time||'').replace(/"/g,'&quot;')}" placeholder="T5/2026" style="padding:3px 6px;font-size:12px"></td>
+                  <td><input class="fc pt-time" type="date" value="${(t.time||'')}" style="padding:3px 6px;font-size:12px"></td>
                   <td><input class="fc pt-note" value="${(t.note||'').replace(/"/g,'&quot;')}" placeholder="Ghi chú" style="padding:3px 6px;font-size:12px"></td>
                   <td><button class="btn bd bsm" onclick="collectPlanGroups();removePlanTask(${gi},${ti})" style="padding:2px 6px">✕</button></td>
                 </tr>`).join('')}
@@ -4482,9 +4599,10 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       const hb = $('plan-history-body');
       if (hb) hb.innerHTML = D.plans.length ? D.plans.map(p => {
         const groups = Array.isArray(p.content) ? p.content : [];
+        const dispMonth = fmtPlanMonth(p.month || '');
         return `<tr>
-          <td>${p.month || '–'}</td>
-          <td>${p.title || '–'}</td>
+          <td style="font-weight:600">${dispMonth}</td>
+          <td>${p.title || dispMonth}</td>
           <td><span class="bdg bb2">${groups.length} nhóm</span></td>
           <td><span class="bdg bg2">${p.status || 'Đã lưu'}</span></td>
           <td style="font-size:11px">${p.timestamp || '–'}</td>
@@ -4497,7 +4615,12 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       if (!id) return;
       const plan = D.plans.find(p => p.id === id); if (!plan) return;
       _currentPlanId = plan.id;
-      $('plan-month').value = plan.month || '';
+      // Restore month: if stored as "Tháng M/YYYY", convert back to "yyyy-mm" for input[type=month]
+      const rawMonth = plan.month || '';
+      let monthInputVal = rawMonth;
+      const mMatch = rawMonth.match(/Tháng\s*(\d+)\/(\d+)/i);
+      if (mMatch) { monthInputVal = mMatch[2] + '-' + String(mMatch[1]).padStart(2,'0'); }
+      if ($('plan-month')) $('plan-month').value = monthInputVal;
       $('plan-title').value = plan.title || '';
       $('plan-note').value = plan.note || '';
       $('plan-id-label').textContent = 'ID: ' + plan.id;
@@ -4507,14 +4630,16 @@ Dương Thanh Liêm – Operations Phúc Tea`;
     }
 
     async function savePlan() {
-      const month = $('plan-month').value.trim();
-      if (!month) { toast('⚠️ Nhập tháng/quý kế hoạch', 'twarn'); return; }
+      const monthRaw = ($('plan-month')||{}).value || '';
+      if (!monthRaw) { toast('⚠️ Chọn tháng kế hoạch', 'twarn'); return; }
+      // Format yyyy-mm → "Tháng M/YYYY" for storage & display
+      const month = fmtPlanMonth(monthRaw);
       collectPlanGroups();
       load('Đang lưu kế hoạch...');
       const res = await api({
         action: 'savePlan', data: {
           id: _currentPlanId || undefined,
-          month, title: $('plan-title').value,
+          month, title: $('plan-title').value || month,
           content: _planGroups,
           note: $('plan-note').value, status: 'Đã lưu'
         }
@@ -4522,8 +4647,30 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       unload();
       if (res.ok) {
         _currentPlanId = res.planId;
-        $('plan-id-label').textContent = 'ID: ' + res.planId;
-        toast('✅ Đã lưu kế hoạch!');
+        if ($('plan-id-label')) $('plan-id-label').textContent = 'ID: ' + res.planId;
+        toast('✅ Đã lưu kế hoạch! Đang tạo việc cần làm...');
+        // Auto-create PLAN_TASKS from content immediately on save
+        const tasks = [];
+        _planGroups.forEach(g => {
+          (g.tasks || []).forEach(t => {
+            if (t.ic && t.task) {
+              tasks.push({
+                planId: res.planId,
+                month,
+                task: t.task,
+                ic: t.ic,
+                deadline: t.time || '',
+                note: t.note || '',
+                kpi: t.kpi || '',
+                budget: t.budget || ''
+              });
+            }
+          });
+        });
+        if (tasks.length > 0 && CFG.scriptUrl) {
+          await api({ action: 'createPlanTasks', planId: res.planId, month, tasks });
+          toast('✅ Đã lưu & tạo ' + tasks.length + ' việc cần làm!');
+        }
         await loadPlans();
       } else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
     }
@@ -4766,11 +4913,20 @@ Trả về JSON thuần, không markdown. 4 nhóm: Setup&KT, Audit, Đào tạo,
 
     async function aiGenReport() {
       const month = $('rpt-month').value || 'tháng này';
+      const mode = $('rpt-mode') ? $('rpt-mode').value : 'free';
       load('AI đang soạn báo cáo...');
       const kpi = `Tháng: ${month}, CH hoạt động: ${D.kpi.stores}, audit TB: ${D.kpi.auditAvg}.`;
-      const r = await callAI(`${kpi}\nSoạn báo cáo kết quả Operations Phúc Tea dạng JSON array:
-[{"group":"TÊN NHÓM","tasks":[{"task":"Đầu việc","actualResult":"Kết quả","budgetUsed":"","link":"","note":""}]}]
-JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
+      let planCtx = '';
+      if (mode === 'plan') {
+        const planId = $('rpt-plan-ref') ? $('rpt-plan-ref').value : '';
+        const plan = planId ? (D.plans||[]).find(p => p.id === planId) : null;
+        if (plan) {
+          planCtx = `\nKẾ HOẠCH SO SÁNH: ${plan.title||plan.month||'–'} | Mục tiêu CH: ${plan.targetStores||'–'} | Audit ≥${plan.targetAudit||85}đ | NS đề xuất: ${plan.budget||0}tr`;
+          planCtx += `\nThực tế: CH mới: ${D.kpi.newStores||0} | Audit TB: ${D.kpi.auditAvg||0}đ`;
+          planCtx += `\nThành tựu: ${$('rpt-highlight').value||'–'} | Thách thức: ${$('rpt-challenge').value||'–'}`;
+        }
+      }
+      const r = await callAI(`${kpi}${planCtx}\nSoạn báo cáo kết quả Operations Phúc Tea${planCtx?' kèm so sánh kế hoạch':''} dạng JSON array:\n[{"group":"TÊN NHÓM","tasks":[{"task":"Đầu việc","actualResult":"Kết quả","budgetUsed":"","link":"","note":""}]}]\nJSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
       unload();
       try {
         const clean = r.replace(/```json|```/g, '').trim();
@@ -4830,9 +4986,53 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
         body = lines.join('\n');
       } else {
         const lines = [`BÁO CÁO KẾT QUẢ OPERATIONS – ${month.toUpperCase()}`, ''];
-        lines.push(`Thành tựu: ${$('rpt-highlight').value || '–'}`);
-        lines.push(`Thách thức: ${$('rpt-challenge').value || '–'}`);
-        lines.push('\nTrân trọng,\nDương Thanh Liêm');
+        lines.push(`Thành tựu nổi bật:\n${$('rpt-highlight').value || '–'}`);
+        lines.push('');
+        lines.push(`Thách thức & kế hoạch tiếp theo:\n${$('rpt-challenge').value || '–'}`);
+        // Mode 2: include plan comparison table
+        const planId = $('rpt-plan-ref') ? $('rpt-plan-ref').value : '';
+        const plan = planId ? D.plans.find(p => p.id === planId) : null;
+        if (plan) {
+          lines.push('');
+          lines.push(`━━ SO SÁNH VỚI KẾ HOẠCH: ${plan.title || plan.month || '–'} ━━`);
+          lines.push(`Mục tiêu: ${plan.targetStores || '–'} CH mới | Audit ≥${plan.targetAudit || 85}đ | NS đề xuất: ${plan.budget || 0}tr`);
+          lines.push(`Thực tế: ${D.kpi.newStores || 0} CH mới | Audit TB: ${D.kpi.auditAvg || 0}đ`);
+          // Budget comparison from compareData inputs
+          let totalActualBudget = 0;
+          document.querySelectorAll('#rpt-compare-body input[data-field="actualBudget"]').forEach(inp => {
+            totalActualBudget += parseFloat(inp.value.replace(/[^0-9.]/g,'')) || 0;
+          });
+          if (totalActualBudget > 0) lines.push(`Ngân sách thực tế: ${totalActualBudget}tr / ${plan.budget || '–'}tr đề xuất`);
+          // Per-task comparison
+          const groups = Array.isArray(plan.content) ? plan.content : [];
+          if (groups.length) {
+            lines.push('');
+            lines.push('CHI TIẾT THEO ĐẦU VIỆC:');
+            const inputs = document.querySelectorAll('#rpt-compare-body input');
+            const dataMap = {};
+            inputs.forEach(inp => {
+              const g = inp.dataset.g, t = inp.dataset.t, f = inp.dataset.field;
+              if (g && t && f && inp.value) {
+                if (!dataMap[g]) dataMap[g] = {};
+                if (!dataMap[g][t]) dataMap[g][t] = {};
+                dataMap[g][t][f] = inp.value;
+              }
+            });
+            groups.forEach((g, gi) => {
+              if (g.tasks && g.tasks.length) {
+                lines.push(`▌ ${g.group}`);
+                g.tasks.forEach((t, ti) => {
+                  const actual = (dataMap[gi] && dataMap[gi][ti]) || {};
+                  const kpiStatus = actual.actualKpi ? `KPI: ${t.kpi||'–'} → ${actual.actualKpi}` : `KPI: ${t.kpi||'–'}`;
+                  const budgetStatus = actual.actualBudget ? `NS: ${t.budget||'–'} → ${actual.actualBudget}tr` : '';
+                  const desc = actual.description ? `(${actual.description})` : '';
+                  lines.push(`  • ${t.task} | ${kpiStatus}${budgetStatus?' | '+budgetStatus:''} ${desc}`);
+                });
+              }
+            });
+          }
+        }
+        lines.push('\nTrân trọng,\nDương Thanh Liêm · Operations Leader\n0357 636 539');
         body = lines.join('\n');
       }
       $('em-body').value = body;
@@ -4927,14 +5127,68 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
       $('ai-suggestions').innerHTML = `<div class="ai-box"><span class="aitag">💡 GỢI Ý KẾ HOẠCH</span><div class="ait">Tháng tới</div><div class="aii">${r.replace(/\n/g, '<br>')}</div></div>`;
     }
 
+    // Build full DB context for AI (stores, staff, audit, plans, tasks)
+    function buildAIContext() {
+      const lines = [];
+      // Stores
+      const stores = _allStores || [];
+      if (stores.length) {
+        lines.push('=== CỬA HÀNG (' + stores.length + ') ===');
+        stores.slice(0, 60).forEach(s => {
+          lines.push(`${s.storeId} | ${s.name} | Chủ: ${s.owner||'–'} | SĐT: ${s.phone||'–'} | Email: ${s.email||'–'} | Tỉnh: ${s.province||'–'} | Trạng thái: ${s.status||'–'} | Khai trương: ${s.launchDate||'–'}`);
+        });
+      }
+      // Staff
+      const staff = _allStaff || D.employees || [];
+      if (staff.length) {
+        lines.push('\n=== NHÂN SỰ (' + staff.length + ') ===');
+        staff.slice(0, 40).forEach(s => {
+          lines.push(`${s.id} | ${s.name} | Chức danh: ${s.position||'–'} | Cửa hàng: ${s.store||'–'} | SĐT: ${s.phone||'–'} | Email: ${s.email||'–'}`);
+        });
+      }
+      // Audit
+      const audits = ((_auditDirectData && _auditDirectData.auditList) || D.auditList || []);
+      if (audits.length) {
+        lines.push('\n=== AUDIT MỚI NHẤT ===');
+        audits.slice(0, 20).forEach(a => {
+          lines.push(`${a.store} | Điểm: ${a.pct}% | ${a.status||''} | CCP: ${a.hasCCP?'CÓ':'Không'} | RISK: ${a.hasRISK?'CÓ':'Không'} | Ngày: ${a.date||a.timestamp||'–'}`);
+        });
+      }
+      // Plans
+      if (D.plans && D.plans.length) {
+        lines.push('\n=== KẾ HOẠCH ===');
+        D.plans.slice(0, 5).forEach(p => {
+          lines.push(`${p.month||'–'} | ${p.title||'–'} | Mục tiêu CH: ${p.targetStores||'–'} | Audit: ${p.targetAudit||'–'} | NS: ${p.budget||0}`);
+          if (Array.isArray(p.content)) {
+            p.content.forEach(g => {
+              (g.tasks||[]).forEach(t => {
+                if (t.task) lines.push(`  • ${g.group}: ${t.task} | IC: ${t.ic||'–'} | Thời gian: ${t.time||'–'}`);
+              });
+            });
+          }
+        });
+      }
+      // My tasks
+      if (D.myTasks && D.myTasks.length) {
+        lines.push('\n=== VIỆC CẦN LÀM ===');
+        D.myTasks.slice(0, 20).forEach(t => {
+          lines.push(`[${(t._source||'').toUpperCase()}] ${t.task} | Cửa hàng: ${t.storeName||'–'} | IC: ${t.ic||'–'} | Deadline: ${t.deadline||'–'}`);
+        });
+      }
+      return lines.join('\n');
+    }
+
     async function askAI() {
       const q = $('ai-q').value.trim(); if (!q) return;
       $('ai-q').value = '';
       const ms = $('ai-messages');
-      ms.innerHTML += `<div class="ai-msg ai-msg-user"><div class="ai-bbl">${q}</div></div>`;
-      ms.innerHTML += `<div class="ai-msg ai-msg-ai" id="ai-typing"><div class="ai-bbl" style="color:rgba(255,255,255,.4)">Đang suy nghĩ...</div></div>`;
+      ms.innerHTML += `<div class="ai-msg ai-msg-user"><div class="ai-bbl">${q.replace(/</g,'&lt;')}</div></div>`;
+      ms.innerHTML += `<div class="ai-msg ai-msg-ai" id="ai-typing"><div class="ai-bbl" style="color:rgba(255,255,255,.4)">Đang tra cứu database & suy nghĩ...</div></div>`;
       ms.scrollTop = ms.scrollHeight;
-      const r = await callAI(q);
+      // Build full DB context and prepend to question
+      const dbCtx = buildAIContext();
+      const fullPrompt = dbCtx ? `[DỮ LIỆU HỆ THỐNG PHÚC TEA]\n${dbCtx}\n\n[CÂU HỎI]\n${q}` : q;
+      const r = await callAI(fullPrompt, 'Bạn là trợ lý vận hành Phúc Tea. Dựa trên dữ liệu được cung cấp, trả lời chính xác câu hỏi. Nếu không tìm thấy trong data, nói rõ. Trả lời tiếng Việt, ngắn gọn và thực tế.');
       const t = $('ai-typing');
       if (t) { t.querySelector('.ai-bbl').innerHTML = r.replace(/\n/g, '<br>'); t.removeAttribute('id'); }
       ms.scrollTop = ms.scrollHeight;
@@ -4945,51 +5199,104 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
     //  VIỆC CỦA TÔI (BUG 2 FIX)
     // ════════════════════════════════════════
     async function loadMyTasks() {
-      // FIX: Ensure employees are loaded before trying to use the dropdown
-      if (!D.employees || D.employees.length === 0) {
-        await loadEmployees();
-      }
+      if (!D.employees || D.employees.length === 0) await loadEmployees();
       const userDash = $('mock-user-select');
       const userFull = $('mytask-user-select');
-      // Sync selections – prefer the full page selector when on that page
       let userName = '';
       if (userFull && userFull.value) userName = userFull.value;
       else if (userDash && userDash.value) userName = userDash.value;
-
-      // BUG 2 FIX: trim the userName before sending
       userName = userName.trim();
-
-      // Keep both selectors in sync
       if (userDash && userName) userDash.value = userName;
       if (userFull && userName) userFull.value = userName;
-
       if (!userName) { renderMyTasks([]); return; }
       if (!CFG.scriptUrl) { toast('⚠️ Chưa cấu hình Apps Script URL', 'twarn'); return; }
 
       load('Đang tải việc của ' + userName + '...');
       try {
-        // Pass trimmed userName to server
-        const res = await api({ action: 'getMyTasks', userName });
-        unload();
-        if (res.ok) {
-          // BUG 2 FIX: Client-side double-check — only show tasks where IC matches and not done
-          const userNorm = userName.toLowerCase().trim();
-          D.myTasks = (res.tasks || []).filter(t => {
-            const icNorm = (t.ic || '').toLowerCase().trim();
-            return icNorm && (
-              icNorm === userNorm ||
-              icNorm.split(' ').some(p => p.length > 1 && userNorm.split(' ').some(u => u.length > 1 && u === p))
-            );
-          });
-          renderMyTasks(D.myTasks);
-          updateMyTaskFilters(D.myTasks);
-        } else {
-          toast('❌ ' + (res.error || 'Lỗi tải việc'), 'terr');
+        // Fetch Setup tasks
+        const setupRes = await api({ action: 'getMyTasks', userName });
+        const userNorm = userName.toLowerCase().trim();
+
+        let setupTasks = [];
+        if (setupRes.ok) {
+          setupTasks = (setupRes.tasks || [])
+            .filter(t => {
+              const icNorm = (t.ic || '').toLowerCase().trim();
+              return icNorm && (icNorm === userNorm || icNorm.split(' ').some(p => p.length > 1 && userNorm.split(' ').some(u => u.length > 1 && u === p)));
+            })
+            .map(t => ({ ...t, _source: 'setup', _priority: 2 }));
         }
+
+        // Fetch Plan tasks (from PLAN_TASKS sheet)
+        let planTasks = [];
+        try {
+          const planRes = await api({ action: 'getPlanTasks', userName });
+          if (planRes.ok) {
+            planTasks = (planRes.tasks || []).map(t => ({ ...t, _source: 'plan', _priority: 3 }));
+          }
+        } catch(_) {}
+
+        // Audit tasks: CCP/RISK stores from audit data (if loaded)
+        let auditTasks = [];
+        if (_auditDirectData && _auditDirectData.auditList) {
+          (_auditDirectData.auditList || []).forEach(a => {
+            if (a.hasCCP || a.hasRISK) {
+              (a.issues || []).filter(i => i.verdict === 'CCP' || i.verdict === 'RISK').forEach(issue => {
+                auditTasks.push({
+                  taskId: `AUDIT_${a.store}_${issue.id || issue.item}`,
+                  task: `[${issue.verdict}] ${issue.item}`,
+                  phase: issue.group || 'AUDIT',
+                  deadline: a.date || '',
+                  ic: safeAuditorName(a.auditor),
+                  storeName: a.store,
+                  storeId: '',
+                  _source: 'audit',
+                  _priority: issue.verdict === 'CCP' ? 0 : 1,
+                  _auditStore: a.store,
+                  _auditTs: a.timestamp,
+                });
+              });
+            }
+          });
+        }
+
+        // Merge all sources
+        const all = [...auditTasks, ...setupTasks, ...planTasks];
+
+        // Sort: overdue first, then by priority (0=CCP, 1=RISK, 2=setup, 3=plan), then deadline asc
+        const toD = s => {
+          if (!s) return new Date('9999-12-31');
+          try { const p = s.split('/'); return p.length === 3 ? new Date(+p[2], +p[1]-1, +p[0]) : new Date(s); } catch(_) { return new Date('9999-12-31'); }
+        };
+        const today = new Date(); today.setHours(0,0,0,0);
+        all.sort((a, b) => {
+          const da = toD(a.deadline), db = toD(b.deadline);
+          const aOD = da < today, bOD = db < today;
+          if (aOD !== bOD) return aOD ? -1 : 1;
+          if (a._priority !== b._priority) return a._priority - b._priority;
+          return da - db;
+        });
+
+        D.myTasks = all;
+        unload();
+        renderMyTasks(D.myTasks);
+        updateMyTaskFilters(D.myTasks);
       } catch (e) {
         unload();
         toast('❌ Lỗi kết nối', 'terr');
+        console.error(e);
       }
+    }
+
+    // Filter by source tab
+    let _myTaskSourceFilter = 'all';
+    function filterMyTasksSource(src, btn) {
+      _myTaskSourceFilter = src;
+      document.querySelectorAll('#pg-mytasks .ptab').forEach(b => b.classList.remove('on'));
+      if (btn) btn.classList.add('on');
+      let tasks = [...D.myTasks];
+      if (src !== 'all') tasks = tasks.filter(t => t._source === src);
+      renderMyTasks(tasks, true);
     }
 
     function updateMyTaskFilters(tasks) {
@@ -5010,7 +5317,14 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
     function filterMyTasks() {
       const storeFilter = ($('mytask-filter-store') || { value: 'all' }).value;
       const phaseFilter = ($('mytask-filter-phase') || { value: 'all' }).value;
-      let tasks = [...D.myTasks];
+      const doneFilter  = ($('mytask-done-filter')  || { value: 'active' }).value;
+      let tasks;
+      if (doneFilter === 'done') {
+        tasks = [...(D._completedTasks || [])];
+      } else {
+        tasks = [...D.myTasks];
+      }
+      if (_myTaskSourceFilter && _myTaskSourceFilter !== 'all') tasks = tasks.filter(t => t._source === _myTaskSourceFilter);
       if (storeFilter !== 'all') tasks = tasks.filter(t => t.storeName === storeFilter);
       if (phaseFilter !== 'all') tasks = tasks.filter(t => t.phase === phaseFilter);
       renderMyTasks(tasks, true);
@@ -5091,12 +5405,18 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
           const isTD = dl && dl.getTime() === today.getTime();
           const rowBg = isOD ? 'background:rgba(229,62,62,0.05)' : isTD ? 'background:rgba(245,166,35,0.06)' : '';
           return `<tr style="${rowBg}">
-            <td style="font-weight:600">${t.task}</td>
+            <td style="font-weight:600">
+              ${t._source === 'audit' ? '<span class="bdg br2" style="font-size:9px;margin-right:4px">AUDIT</span>' : t._source === 'plan' ? '<span class="bdg bb2" style="font-size:9px;margin-right:4px">KH</span>' : ''}
+              ${t.task}
+            </td>
             <td><span class="bdg bb2" style="font-size:10px">${t.phase}</span></td>
             <td style="color:${isOD ? 'var(--red)' : isTD ? 'var(--gold)' : 'var(--gray)'};font-weight:${isOD || isTD ? '700' : '400'}">
-              ${isOD ? '⚠️ ' : '🔔 '}${t.deadline || '–'}
+              ${isOD ? '⚠️ ' : isTD ? '🔔 ' : ''}${t.deadline || '–'}
             </td>
-            <td><button class="btn bp bsm" onclick="quickMarkDone('${t.storeId}','${t.taskId}',this)">✓ Xong</button></td>
+            <td>${t._doneAt
+              ? `<span class="bdg bg2" style="font-size:10px">✓ ${t._doneAt}</span>`
+              : `<button class="btn bp bsm" onclick="quickMarkDone('${t.storeId||''}','${t.taskId}','${t._source||'setup'}',this)">✓ Xong</button>`
+            }</td>
           </tr>`;
         }).join('');
 
@@ -5115,18 +5435,76 @@ JSON thuần, 3-4 nhóm: Setup&KT, Audit, Đào tạo, Vận hành.`);
       }).join('');
     }
 
-    async function quickMarkDone(storeId, taskId, btn) {
-      if (!storeId || !taskId) return;
+    async function quickMarkDone(storeId, taskId, source, btn) {
+      if (!taskId) return;
       btn.disabled = true; btn.textContent = '...';
-      const res = await api({ action: 'updateTaskStatus', storeId, taskId, done: true });
-      if (res.ok) {
+      let res;
+      if (source === 'plan') {
+        res = await api({ action: 'updatePlanTaskStatus', taskId, done: true });
+      } else {
+        if (!storeId && source !== 'audit') { btn.disabled = false; btn.textContent = '✓ Xong'; return; }
+        res = await api({ action: 'updateTaskStatus', storeId: storeId || '', taskId, done: true });
+      }
+      if (res && res.ok) {
         toast('✅ Đã đánh dấu hoàn thành!');
-        // Remove from local list
+        // Move task to completed list
+        const doneTask = D.myTasks.find(t => t.storeId === storeId && t.taskId === taskId);
+        if (!D._completedTasks) D._completedTasks = [];
+        if (doneTask) D._completedTasks.unshift({ ...doneTask, _doneAt: new Date().toLocaleString('vi-VN') });
         D.myTasks = D.myTasks.filter(t => !(t.storeId === storeId && t.taskId === taskId));
+
+        // For audit tasks: check if all audit tasks for this store are done → update status + dismiss alert
+        if (source === 'audit' && storeId) {
+          const remaining = D.myTasks.filter(t => t._source === 'audit' && t._auditStore === storeId);
+          if (remaining.length === 0) {
+            // All audit tasks for this store done → mark as "Đã khắc phục" in audit history
+            _markAuditStoreRecovered(storeId);
+          }
+        }
+        // Check global CCP/RISK — if no more audit tasks remain, re-render audit KPI
+        const auditRemaining = D.myTasks.filter(t => t._source === 'audit');
+        if (auditRemaining.length === 0 && _auditDirectData && _auditDirectData.auditList) {
+          renderAuditDirectKPI({ avg: _auditDirectData.avg||0, reauditCount: _auditDirectData.reauditCount||0, auditList: _auditDirectData.auditList });
+          renderDashboard();
+        }
         renderMyTasks(D.myTasks);
       } else {
-        toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+        toast('❌ ' + ((res && res.error) || 'Lỗi'), 'terr');
         btn.disabled = false; btn.textContent = '✓ Xong';
+      }
+    }
+
+    // Mark a store as "Đã khắc phục" in the audit table row
+    function _markAuditStoreRecovered(storeOrStoreName) {
+      // Find rows in a-direct-body for this store and update status badge
+      const tbody = $('a-direct-body');
+      if (!tbody) return;
+      tbody.querySelectorAll('tr').forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells[0] && cells[0].textContent.includes(storeOrStoreName)) {
+          const statusCell = cells[6]; // Trạng thái column
+          if (statusCell && !statusCell.innerHTML.includes('Đã khắc phục')) {
+            statusCell.innerHTML += ' <span class="bdg bg2" style="font-size:9px;margin-left:4px">✅ Đã khắc phục</span>';
+          }
+          // Auto-dismiss CCP/RISK: remove from _auditDirectData
+          if (_auditDirectData && _auditDirectData.auditList) {
+            const rec = _auditDirectData.auditList.find(a => a.store && a.store.includes(storeOrStoreName.split(' ')[0]));
+            if (rec) { rec.hasCCP = false; rec.hasRISK = false; }
+          }
+        }
+      });
+      // Also update history table
+      const hbody = $('a-history-body');
+      if (hbody) {
+        hbody.querySelectorAll('tr').forEach(tr => {
+          const cells = tr.querySelectorAll('td');
+          if (cells[1] && cells[1].textContent.includes(storeOrStoreName)) {
+            const statusCell = cells[4];
+            if (statusCell && !statusCell.innerHTML.includes('Đã khắc phục')) {
+              statusCell.innerHTML += ' <span class="bdg bg2" style="font-size:9px">✅ KP</span>';
+            }
+          }
+        });
       }
     }
 

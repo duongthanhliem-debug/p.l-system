@@ -1528,193 +1528,305 @@
     <div class="ph">
       <div>
         <div class="pt">Audit & Kiểm soát chất lượng</div>
-        <div class="ps">Dữ liệu từ Google Form + Form chấm nhanh</div>
+        <div class="ps">Dữ liệu tự động từ Google Form · Tính điểm theo logic OK/NOK/CCP/RISK/NA</div>
+      </div>
+      <div class="fb">
+        <button class="btn bo bsm" onclick="loadAuditModule()">🔄 Đồng bộ</button>
+        <a href="https://forms.gle/iobgm5TbPd2cEgx29" target="_blank" class="btn bp bsm">📋 Form Audit trực tiếp</a>
+        <a href="https://forms.gle/vxWsire9qTLcdD1cA" target="_blank" class="btn bo bsm">🕵️ Form KHBA</a>
       </div>
     </div>
+
+    <!-- Tabs -->
     <div class="ptabs">
-      <button class="ptab on" onclick="showAuditTab('direct',this)">📋 Audit trực tiếp</button>
-      <button class="ptab" onclick="showAuditTab('secret',this)">🕵️ Khách hàng bí ẩn</button>
-      <button class="ptab" onclick="showAuditTab('quick',this)">✍️ Chấm nhanh</button>
-      <button class="ptab" onclick="showAuditTab('report',this)">📊 Biên bản</button>
+      <button class="ptab on"  id="atab-direct-btn"   onclick="showAuditTab('direct',this)">📋 Audit trực tiếp</button>
+      <button class="ptab"     id="atab-khba-btn"     onclick="showAuditTab('khba',this)">🕵️ Khách hàng bí ẩn</button>
+      <button class="ptab"     id="atab-report-btn"   onclick="showAuditTab('areport',this)">📄 Biên bản PDF</button>
+      <button class="ptab"     id="atab-schedule-btn" onclick="openScheduleAudit()">📅 Lên lịch audit</button>
     </div>
 
-    <!-- Direct -->
-    <div id="tab-direct">
-      <div id="audit-alerts-container"></div>
-      <div class="kgrid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi">
-          <div class="kl">Điểm TB hệ thống</div>
-          <div class="kv" id="audit-avg" style="color:var(--green)">–</div>
-          <div class="kc up" id="audit-avg-sub">Mục tiêu ≥85</div>
-        </div>
-        <div class="kpi">
-          <div class="kl">Lượt audit tháng này</div>
-          <div class="kv" id="audit-done">–</div>
-        </div>
-        <div class="kpi">
-          <div class="kl">Cần tái audit</div>
-          <div class="kv" style="color:var(--red)" id="audit-reaudit-cnt">–</div>
-          <div class="kc dn">Deadline 15 ngày</div>
-        </div>
+    <!-- ── TAB: AUDIT TRỰC TIẾP ── -->
+    <div id="atab-direct">
+      <div class="kgrid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="kl">Điểm TB hệ thống</div><div class="kv" id="a-avg" style="color:var(--green)">–</div><div class="kc up" id="a-avg-sub">Mục tiêu ≥85%</div></div>
+        <div class="kpi"><div class="kl">Cần tái audit</div><div class="kv" style="color:var(--red)" id="a-reaudit">–</div><div class="kc dn">Dưới 85%</div></div>
+        <div class="kpi"><div class="kl">Vi phạm CCP</div><div class="kv" style="color:var(--red)" id="a-ccp">–</div><div class="kc dn">Xử lý ngay</div></div>
+        <div class="kpi"><div class="kl">Vi phạm RISK</div><div class="kv" style="color:var(--red)" id="a-risk">–</div><div class="kc dn">Điểm = 0</div></div>
       </div>
+      <div id="a-alert-bar"></div>
       <div class="card">
         <div class="ch">
-          <span class="ct">Kết quả từ Google Form Audit Trực tiếp</span>
+          <span class="ct">Kết quả audit mới nhất theo cửa hàng</span>
           <div class="fb">
-            <a href="https://forms.gle/LyuYTxVaaoQTqy5C7" target="_blank" class="btn bp bsm">🔗 Mở Form Audit TT</a>
-            <button class="btn bo bsm" onclick="loadAuditData()">🔄 Làm mới</button>
-            <button class="btn bo bsm" onclick="exportAuditData()">📥 Xuất Excel</button>
+            <button class="btn bo bsm" onclick="loadAuditDirect()">🔄 Làm mới</button>
+            <button class="btn bo bsm" onclick="exportAuditDirectXLSX()">📥 Xuất Excel</button>
           </div>
         </div>
         <div class="tbl-wrap">
           <table class="tbl">
-            <thead>
-              <tr>
-                <th>Cửa hàng</th>
-                <th>Điểm</th>
-                <th>Ngày</th>
-                <th>Trạng thái</th>
-                <th>Ghi chú</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="audit-body-direct">
-              <tr>
-                <td colspan="6">
-                  <div class="empty-state" style="padding:16px">Nhấn "Làm mới" để tải</div>
-                </td>
-              </tr>
-            </tbody>
+            <thead><tr><th>Cửa hàng</th><th>Ngày</th><th>Điểm %</th><th>Đạt/Tối đa</th><th>CCP</th><th>RISK</th><th>Trạng thái</th><th>Người audit</th><th style="width:110px"></th></tr></thead>
+            <tbody id="a-direct-body"><tr><td colspan="9"><div class="empty-state" style="padding:16px">Nhấn "Đồng bộ" để tải dữ liệu</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Lịch sử audit gần đây (20 lần gần nhất)</span></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Thời gian</th><th>Cửa hàng</th><th>Loại audit</th><th>Điểm %</th><th>Trạng thái</th><th>Người audit</th><th style="width:44px"></th></tr></thead>
+            <tbody id="a-history-body"><tr><td colspan="7"><div class="empty-state" style="padding:12px">Chưa có dữ liệu</div></td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- Secret -->
-    <div id="tab-secret" style="display:none">
+    <!-- ── TAB: KHBA ── -->
+    <div id="atab-khba" style="display:none">
+      <div class="kgrid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="kpi"><div class="kl">Điểm KHBA TB</div><div class="kv" style="color:var(--blue)" id="k-avg">–</div><div class="kc info">Từ đánh giá bí ẩn</div></div>
+        <div class="kpi"><div class="kl">Lượt phản hồi</div><div class="kv" id="k-cnt">–</div><div class="kc warn">Tổng lượt ghi nhận</div></div>
+      </div>
       <div class="card">
         <div class="ch">
-          <span class="ct">Kết quả Audit Khách hàng bí ẩn</span>
+          <span class="ct">Kết quả Khách hàng bí ẩn</span>
           <div class="fb">
-            <a href="https://forms.gle/4o36fdUQ4BNvjpCP8" target="_blank" class="btn bp bsm">🔗 Mở Form Bí ẩn</a>
-            <button class="btn bo bsm" onclick="loadSecretAudit()">🔄 Tải mới nhất</button>
+            <button class="btn bo bsm" onclick="loadKHBA()">🔄 Làm mới</button>
+            <button class="btn bo bsm" onclick="exportKHBAXLSX()">📥 Excel</button>
+            <button class="btn bo bsm" onclick="aiKHBAAnalysis()">🤖 AI phân tích</button>
           </div>
         </div>
         <div class="tbl-wrap">
           <table class="tbl">
-            <thead>
-              <tr>
-                <th>Thời gian</th>
-                <th>Cửa hàng</th>
-                <th>Điểm</th>
-                <th>Nhận xét</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody id="audit-body-secret">
-              <tr>
-                <td colspan="5">
-                  <div class="empty-state" style="padding:16px">Nhấn "Tải mới nhất"</div>
-                </td>
-              </tr>
-            </tbody>
+            <thead><tr><th>Thời gian</th><th>Cửa hàng</th><th>Điểm %</th><th>Rating TB</th><th>Nhận xét</th><th>Trạng thái</th><th style="width:44px"></th></tr></thead>
+            <tbody id="k-body"><tr><td colspan="7"><div class="empty-state" style="padding:16px">Nhấn "Làm mới" để tải</div></td></tr></tbody>
           </table>
         </div>
       </div>
-      <div class="card">
-        <div class="ch"><span class="ct">AI phân tích xu hướng bí ẩn</span></div>
-        <div class="cb">
-          <button class="btn bp bfull" onclick="aiSecretAnalysis()">🤖 AI phân tích kết quả KHBM</button>
-          <div id="secret-ai" style="margin-top:12px;font-size:13px;color:var(--gray)">Nhấn để AI phân tích...</div>
-        </div>
+      <div class="card" id="k-ai-card" style="display:none">
+        <div class="ch"><span class="ct">🤖 AI phân tích KHBA</span></div>
+        <div class="cb" id="k-ai-body" style="font-size:13px;line-height:1.7;color:var(--brown);white-space:pre-wrap"></div>
       </div>
     </div>
 
-    <!-- Quick form -->
-    <div id="tab-quick" style="display:none">
+    <!-- ── TAB: BIÊN BẢN PDF ── -->
+    <div id="atab-areport" style="display:none">
       <div class="g2">
-        <div class="card">
-          <div class="ch"><span class="ct">Form Audit Nhanh</span></div>
-          <div class="cb">
-            <div class="fg"><label class="fl">Cửa hàng</label><select class="fc" id="audit-store">
-                <option value="">-- Chọn cửa hàng --</option>
-              </select></div>
-            <div class="fr">
-              <div class="fg"><label class="fl">Ngày audit</label><input type="date" class="fc" id="audit-date"></div>
-              <div class="fg"><label class="fl">Loại</label><select class="fc" id="audit-type">
-                  <option>Audit trực tiếp</option>
-                  <option>Tái audit</option>
-                  <option>Audit định kỳ</option>
-                </select></div>
-            </div>
-            <div class="sdiv">Tiêu chí chấm điểm</div>
-            <div id="audit-criteria-container">
-              <div class="empty-state" style="padding:16px">Đang tải tiêu chí...</div>
-            </div>
-            <div class="audit-score-box">
-              <div style="font-size:11px;color:var(--gray);margin-bottom:2px">TỔNG ĐIỂM</div>
-              <div id="audit-total" style="font-size:40px;font-weight:700;color:var(--green)">0</div>
-              <div id="audit-status" style="font-size:12px;margin-top:3px;color:var(--green)">Chưa chấm</div>
-              <div style="font-size:11px;color:var(--gray);margin-top:2px">Điểm chuẩn: <span id="audit-std-total"
-                  style="color:var(--blue)">–</span> · Tối đa: <span id="audit-max-total"
-                  style="color:var(--gray)">–</span></div>
-            </div>
-            <div class="fg" style="margin-top:12px"><label class="fl">Action Plan (48h)</label><textarea class="fc"
-                id="action-plan" rows="3" placeholder="Các hành động cần thực hiện..."></textarea></div>
-            <div style="display:flex;gap:7px;flex-wrap:wrap">
-              <button class="btn bp" style="flex:1" onclick="saveAudit()">💾 Lưu lên Sheets</button>
-              <button class="btn bo" onclick="aiAuditAdvice()">🤖 AI đề xuất AP</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Thang điểm & Hướng dẫn</span></div>
-          <div class="cb">
-            <div class="alert ab" style="margin-bottom:10px">📋 <span>Điểm <strong>≥85/100: Đạt</strong>. 70–84: Theo
-                dõi. Dưới 70: Khẩn. Tái audit trong 15 ngày.</span></div>
-            <div id="audit-guide">
-              <div class="empty-state">Đang tải...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Report -->
-    <div id="tab-report" style="display:none">
-      <div class="g2">
+        <!-- Left: form -->
         <div class="card">
           <div class="ch"><span class="ct">Tạo biên bản audit</span></div>
           <div class="cb">
-            <div class="fg"><label class="fl">Cửa hàng</label><select class="fc" id="rpt-audit-store">
+
+            <!-- Step 1: chọn cửa hàng + lần audit -->
+            <div class="fg">
+              <label class="fl">Cửa hàng <span style="color:var(--red)">*</span></label>
+              <select class="fc" id="ar-store" onchange="onAuditStoreChange()">
                 <option value="">-- Chọn cửa hàng --</option>
-              </select></div>
-            <div class="fg"><label class="fl">Loại</label><select class="fc" id="rpt-audit-type">
-                <option>Audit trực tiếp</option>
-                <option>Audit bí ẩn</option>
-                <option>Tổng hợp</option>
-              </select></div>
+              </select>
+            </div>
+            <div class="fr">
+              <div class="fg">
+                <label class="fl">Lọc loại audit</label>
+                <select class="fc" id="ar-type-filter" onchange="onAuditStoreChange()">
+                  <option value="all">Tất cả loại</option>
+                  <option>Audit trực tiếp</option>
+                  <option>Tái audit</option>
+                  <option>Audit định kỳ</option>
+                  <option>KHBA</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl">Chọn lần audit</label>
+                <select class="fc" id="ar-session" onchange="onAuditSessionChange()">
+                  <option value="">-- Chọn lần audit --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Step 2: auto-filled info (read-only date) -->
+            <div class="fr">
+              <div class="fg">
+                <label class="fl">Ngày audit <span style="font-size:10px;color:var(--gray)">(tự động)</span></label>
+                <input class="fc" id="ar-date-display" readonly style="background:var(--gray-l);cursor:default;color:var(--gray)" placeholder="Tự động từ lần audit đã chọn">
+                <input type="hidden" id="ar-date">
+              </div>
+              <div class="fg">
+                <label class="fl">Người thực hiện</label>
+                <input class="fc" id="ar-auditor" placeholder="Tên người audit">
+              </div>
+            </div>
+
+            <!-- Step 3: content -->
+            <div class="fg">
+              <label class="fl">Nhận xét tổng thể</label>
+              <textarea class="fc" id="ar-note" rows="2" placeholder="Tự động từ dữ liệu audit · có thể chỉnh sửa" oninput="this.dataset.userEdited='1'"></textarea>
+            </div>
+            <div class="fg">
+              <label class="fl">Action plan (48h)</label>
+              <textarea class="fc" id="ar-action" rows="2" placeholder="Tự động từ dữ liệu audit · có thể chỉnh sửa" oninput="this.dataset.userEdited='1'"></textarea>
+            </div>
+
+            <!-- Step 4: email to send -->
+            <div class="fg">
+              <label class="fl">✉️ Email cửa hàng <span style="font-size:10px;color:var(--gray)">(tự động từ DB · có thể sửa)</span></label>
+              <input type="email" class="fc" id="ar-email" placeholder="Tự động điền khi chọn cửa hàng" oninput="this.dataset.userEdited='1'">
+            </div>
+
+            <!-- Step 5: manual file attach -->
+            <div style="border:1px dashed var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px">
+              <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                📎 THÊM TỆP ĐÍNH KÈM THỦ CÔNG
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label class="btn bo bsm" style="cursor:pointer;margin:0">
+                  Chọn tệp
+                  <input type="file" id="ar-attach-file" multiple accept=".pdf,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="onAttachFileChange()">
+                </label>
+                <span id="ar-attach-name" style="font-size:12px;color:var(--gray)">Chưa có tệp nào được chọn</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
             <div style="display:flex;gap:7px;flex-wrap:wrap">
-              <button class="btn bp" onclick="genAuditReport()">📋 Tạo biên bản</button>
-              <button class="btn bo" onclick="aiGenAuditReport()">🤖 AI soạn</button>
-              <button class="btn bo bsm" onclick="exportAuditReport()">📥 Xuất Excel</button>
+              <button class="btn bp" style="flex:1;min-width:120px" onclick="genAuditReport()">📋 Tạo biên bản</button>
+              <button class="btn bo" onclick="aiAuditAnalysis()">🤖 AI phân tích</button>
+              <button class="btn bo" onclick="printAuditReport()">🖨️ In / PDF</button>
             </div>
+            <div style="margin-top:8px">
+              <button class="btn bo bsm bfull" onclick="sendAuditReportEmail()">✉️ Gửi email kèm biên bản</button>
+            </div>
+
           </div>
         </div>
+
+        <!-- Right: preview -->
         <div class="card">
-          <div class="ch"><span class="ct">Biên bản</span>
-            <div class="fb">
-              <button class="btn bo bsm" id="btn-copy-audit" style="display:none" onclick="copyText(auditReportText)">📋
-                Copy</button>
-              <button class="btn bp bsm" id="btn-send-audit" style="display:none" onclick="openAuditEmailModal()">✉️ Gửi
-                CH</button>
-            </div>
+          <div class="ch">
+            <span class="ct">Xem trước biên bản</span>
+            <button class="btn bo bsm" id="ar-copy-btn" style="display:none" onclick="copyText(_auditReportText)">📋 Copy</button>
           </div>
+          <div class="cb" id="ar-preview" style="font-size:12px;line-height:1.75;color:var(--brown);white-space:pre-wrap;max-height:560px;overflow-y:auto;background:var(--gray-l);border-radius:var(--rs);padding:12px">← Chọn cửa hàng và lần audit, nhấn "Tạo biên bản"</div>
+        </div>
+      </div>
+
+      <!-- AI card -->
+      <div class="card" id="ar-ai-card" style="display:none">
+        <div class="ch"><span class="ct">🤖 AI phân tích kết quả</span></div>
+        <div class="cb" id="ar-ai-body" style="font-size:13px;line-height:1.7;color:var(--brown);white-space:pre-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: LÊN LỊCH AUDIT ── -->
+    <div id="atab-schedule" style="display:none">
+      <div class="g2">
+        <!-- Left: form -->
+        <div class="card">
+          <div class="ch"><span class="ct">📅 Tạo lịch audit mới</span></div>
           <div class="cb">
-            <pre id="audit-report-pre"
-              style="font-size:12px;line-height:1.8;color:var(--brown);white-space:pre-wrap;max-height:420px;overflow-y:auto;background:var(--gray-l);border-radius:var(--rs);padding:12px">← Chọn cửa hàng và tạo biên bản.</pre>
+
+            <div class="fg">
+              <label class="fl">Cửa hàng <span style="color:var(--red)">*</span></label>
+              <!-- ALL stores from DB, not just audited ones -->
+              <select class="fc" id="sched-store" onchange="onSchedStoreChange()">
+                <option value="">-- Chọn cửa hàng --</option>
+              </select>
+            </div>
+            <div class="fr">
+              <div class="fg">
+                <label class="fl">Ngày audit <span style="color:var(--red)">*</span></label>
+                <input type="date" class="fc" id="sched-date">
+              </div>
+              <div class="fg">
+                <label class="fl">Loại audit</label>
+                <select class="fc" id="sched-type">
+                  <option>Audit trực tiếp</option>
+                  <option>Tái audit</option>
+                  <option>Audit định kỳ</option>
+                </select>
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl">Nhân sự phụ trách audit</label>
+              <select class="fc" id="sched-staff">
+                <option value="">-- Chọn nhân sự --</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">✉️ Email cửa hàng <span style="font-size:10px;color:var(--gray)">(tự động · có thể sửa)</span></label>
+              <input type="email" class="fc" id="sched-email" placeholder="Tự động điền khi chọn cửa hàng" oninput="this.dataset.userEdited='1'">
+            </div>
+            <div class="fg">
+              <label class="fl">Ghi chú</label>
+              <textarea class="fc" id="sched-note" rows="2" placeholder="Nội dung lưu ý cho lần audit này..."></textarea>
+            </div>
+
+            <!-- File attach -->
+            <div style="border:1px dashed var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px">
+              <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:6px">📎 THÊM TỆP THỦ CÔNG (PDF, EXCEL, ẢNH...)</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label class="btn bo bsm" style="cursor:pointer;margin:0">
+                  Chọn tệp
+                  <input type="file" id="sched-file" multiple accept=".pdf,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="onSchedFileChange()">
+                </label>
+                <span id="sched-file-name" style="font-size:12px;color:var(--gray)">Chưa có tệp nào được chọn</span>
+              </div>
+            </div>
+
+            <!-- Email preview toggle -->
+            <div style="margin-bottom:10px">
+              <button class="btn bo bsm" onclick="toggleSchedEmailPreview()">👁️ Xem trước nội dung email</button>
+            </div>
+            <div id="sched-email-preview" style="display:none;background:var(--gray-l);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+              <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:6px">NỘI DUNG EMAIL SẼ GỬI:</div>
+              <textarea class="fc" id="sched-email-body" rows="8" style="font-size:12px;line-height:1.7;font-family:monospace" oninput="this.dataset.userEdited='1'"></textarea>
+            </div>
+
+            <button class="btn bp bfull" onclick="saveScheduleAudit()">📅 Lên lịch & Gửi thông báo</button>
           </div>
         </div>
+
+        <!-- Right: guide -->
+        <div class="card">
+          <div class="ch"><span class="ct">Quy trình audit</span></div>
+          <div class="cb">
+            <div class="alert ab" style="margin-bottom:14px">📋 <span>Hệ thống gửi email thông báo lịch audit đến cửa hàng. Nội dung lịch sự, ngắn gọn, rõ ràng.</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--gold-l);color:var(--brown);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">1</div>
+                <div style="font-size:13px;line-height:1.5"><strong>Lên lịch</strong> → gửi email thông báo cho cửa hàng</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--gold-l);color:var(--brown);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">2</div>
+                <div style="font-size:13px;line-height:1.5"><strong>Audit viên</strong> đến CH, điền Google Form tại chỗ</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--gold-l);color:var(--brown);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div>
+                <div style="font-size:13px;line-height:1.5"><strong>Dữ liệu</strong> tự động lưu vào Google Sheets</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--gold-l);color:var(--brown);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">4</div>
+                <div style="font-size:13px;line-height:1.5"><strong>Đồng bộ</strong> → xem kết quả & điểm tự động tính</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--gold-l);color:var(--brown);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">5</div>
+                <div style="font-size:13px;line-height:1.5"><strong>Tạo biên bản PDF</strong> → gửi email cho cửa hàng</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end pg-audit -->
+
+  <!-- ── Modal: Chi tiết audit ── -->
+  <div class="modal" id="modal-audit-detail">
+    <div class="modal-box" style="max-width:820px;max-height:88vh;overflow-y:auto">
+      <div class="modal-hd">
+        <span class="modal-title" id="audit-detail-title">Chi tiết audit</span>
+        <button class="modal-close" onclick="closeModal('modal-audit-detail')">✕</button>
+      </div>
+      <div id="audit-detail-body" style="padding:4px 0">
+        <div class="empty-state" style="padding:20px">Đang tải...</div>
       </div>
     </div>
   </div>
@@ -2429,9 +2541,14 @@
       try {
         const data = await api({ action: 'getData' });
         if (data.ok) {
-          // Nạp dữ liệu từ phản hồi tổng hợp
           D.kpi = data.kpi || D.kpi;
-          D.auditList = data.auditList || [];
+          // Support both new audit format (pct/store) and old (score/name) for dashboard
+          D.auditList = (data.auditList || []).map(a => ({
+            ...a,
+            store: a.store || a.name || '',
+            pct:   a.pct  != null ? a.pct  : (a.score != null ? a.score : 0),
+            pass:  a.pass != null ? a.pass  : ((a.pct ?? a.score ?? 0) >= 85)
+          }));
           D.setupStores = data.setupStores || [];
           D.timeline = data.timeline || [];
           D.lastSync = data.lastSync;
@@ -2440,10 +2557,10 @@
           renderDashboard();
           toast('✅ Đồng bộ thành công!');
 
-          // Nạp các phần bổ trợ một cách tuần tự và nhẹ nhàng
           await loadStaff();
           await loadEmployees();
-          // Template nạp khi vào trang setup hoặc nạp ngầm không treo
+          // Load audit data in background for latest stats
+          loadAuditDirect().then(() => populateAuditReportStores());
           api({ action: 'getSetupTemplate' }).then(res => { if (res.ok) D.template = res.template || []; });
 
         } else {
@@ -2494,7 +2611,8 @@
       // Alerts
       let ah = '';
       if (reCount > 0) {
-        const names = (D.auditList || []).filter(a => a.score < 85).map(a => `${a.name}(${a.score}đ)`).slice(0, 5).join(', ');
+        // New format: use pct; fallback to score for backward compat
+        const names = (D.auditList || []).filter(a => (a.pct ?? a.score) < 85).map(a => `${a.store || a.name}(${a.pct ?? a.score}%)`).slice(0, 5).join(', ');
         ah += `<div class="alert ay">⚠️ <span><strong>${reCount} cửa hàng</strong> cần tái audit: ${names}</span></div>`;
       }
       const alContainer = $('alerts-container');
@@ -2512,14 +2630,16 @@
           }).join('');
       }
 
-      // Audit list
+      // Audit list — support both new format (pct, store) and old (score, name)
       const alDash = $('audit-list-dash');
       if (alDash) {
         alDash.innerHTML = (D.auditList || []).length === 0
           ? '<div class="empty-state"><div class="ei">✅</div>Chưa có dữ liệu audit</div>'
           : D.auditList.slice(0, 8).map(a => {
-            const c = scoreColor(a.score);
-            return `<div class="store-item"><div class="store-dot" style="background:${c}"></div><div class="store-name">${a.name}</div><div class="store-score" style="color:${c}">${a.score}/100</div></div>`;
+            const sc = a.pct ?? a.score ?? 0;
+            const nm = a.store || a.name || '–';
+            const c = scoreColor(sc);
+            return `<div class="store-item"><div class="store-dot" style="background:${c}"></div><div class="store-name">${nm}</div><div class="store-score" style="color:${c}">${sc}%</div></div>`;
           }).join('');
       }
 
@@ -3251,284 +3371,781 @@
     }
 
 
-    // ════════════════════════════════════════
-    //  AUDIT
-    // ════════════════════════════════════════
-    async function loadAuditCriteria() {
+    // ════════════════════════════════════════════════════════
+    //  AUDIT MODULE v3 – BUG FIXES
+    //  Bug 1: no caching → always fresh fetch
+    //  Bug 5: date/auditor formatting fixed
+    //  Bug 7: KHBA score = (avg/5)*100
+    //  Bug 8: table columns fixed (date, ccpCount, riskCount, auditor)
+    //  Bug 2: detail modal added
+    //  Bug 3: export Excel + print PDF
+    //  Bug 4: biên bản filter from history, auto-fill
+    //  Bug 9: schedule audit modal
+    //  Bug TIMELINE: rebuilt from new audit data
+    // ════════════════════════════════════════════════════════
+
+    let _auditReportText = '';
+    let _auditDirectData = { auditList: [], allResults: [] };
+    let _khbaData = { khbaList: [], latestPerStore: [] };
+
+    // ── Format helpers (client-side) ───────────────────────
+    function fmtViDate(raw) {
+      // Converts anything → "dd/MM/yyyy" or "dd/MM/yyyy HH:mm"
+      // Never shows "Tue Apr 07 2026 00:00:00 GMT+0700"
+      if (!raw) return '–';
+      // Already correctly formatted
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(String(raw))) return String(raw);
+      // Try parse as Date
+      try {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mm = String(d.getMonth()+1).padStart(2,'0');
+          const yy = d.getFullYear();
+          const hh = String(d.getHours()).padStart(2,'0');
+          const min= String(d.getMinutes()).padStart(2,'0');
+          return `${dd}/${mm}/${yy} ${hh}:${min}`;
+        }
+      } catch(_) {}
+      return String(raw);
+    }
+    function safeAuditorName(val) {
+      // Reject anything that looks like a Date object or date string
+      if (!val) return '–';
+      const s = String(val).trim();
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return '–';
+      if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(Jan|Feb|Mar|Apr|May|Jun)/i.test(s)) return '–';
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return '–';
+      if (s.includes('GMT') || s.includes('00:00:00')) return '–';
+      return s || '–';
+    }
+
+    // ── Show/hide audit tabs ───────────────────────────────
+    function showAuditTab(tab, btn) {
+      ['direct','khba','areport','schedule'].forEach(t => {
+        const el = $('atab-' + t);
+        if (el) el.style.display = t === tab ? '' : 'none';
+      });
+      document.querySelectorAll('.ptab').forEach(b => b.classList.remove('on'));
+      if (btn) btn.classList.add('on');
+    }
+
+    // ── Load all ───────────────────────────────────────────
+    async function loadAuditModule() {
       if (!CFG.scriptUrl) return;
-      const data = await api({ action: 'getAuditTemplate' });
-      if (data.ok) {
-        D.auditCriteria = data.criteria || [];
-        renderAuditForm();
-        renderAuditGuide();
+      await Promise.all([loadAuditDirect(), loadKHBA()]);
+      populateAuditReportStores();
+    }
+
+    // ══ DIRECT AUDIT ═══════════════════════════════════════
+    async function loadAuditDirect() {
+      if (!CFG.scriptUrl) return;
+      load('Đang tải dữ liệu audit...');
+      try {
+        const res = await api({ action: 'getAuditData' });
+        unload();
+        if (!res.ok) { toast('❌ ' + (res.error || 'Lỗi tải audit'), 'terr'); return; }
+        _auditDirectData = res;
+        D.auditList = res.auditList || [];
+        D.kpi.auditAvg     = res.avg || 0;
+        D.kpi.reauditCount = res.reauditCount || 0;
+        renderAuditDirectKPI(res);
+        renderAuditDirectTable(res.auditList || []);
+        renderAuditHistory(res.allResults || []);
+        renderDashboard();
+      } catch(e) { unload(); toast('❌ Lỗi kết nối', 'terr'); console.error(e); }
+    }
+
+    function renderAuditDirectKPI(res) {
+      const avg       = res.avg || 0;
+      const reaudit   = res.reauditCount || 0;
+      const ccpStores = (res.auditList || []).filter(a => a.hasCCP).length;
+      const riskStores= (res.auditList || []).filter(a => a.hasRISK).length;
+
+      const avgEl = $('a-avg');
+      if (avgEl) { avgEl.textContent = avg + '%'; avgEl.style.color = avg >= 85 ? 'var(--green)' : avg >= 70 ? 'var(--gold)' : 'var(--red)'; }
+      const subEl = $('a-avg-sub');
+      if (subEl) { subEl.textContent = avg >= 85 ? '✓ Đạt mục tiêu ≥85%' : 'Cần cải thiện'; subEl.className = 'kc ' + (avg >= 85 ? 'up' : 'dn'); }
+      const reEl = $('a-reaudit'); if (reEl) reEl.textContent = reaudit;
+      const ccEl = $('a-ccp');    if (ccEl) ccEl.textContent = ccpStores;
+      const rkEl = $('a-risk');   if (rkEl) rkEl.textContent = riskStores;
+
+      const bar = $('a-alert-bar');
+      if (bar) {
+        let alerts = '';
+        if (riskStores > 0) alerts += `<div class="alert ar" style="margin-bottom:6px">🚨 <span><strong>${riskStores} cửa hàng vi phạm RISK</strong> – điểm bằng 0. Xử lý ngay!</span></div>`;
+        if (ccpStores  > 0) alerts += `<div class="alert ay" style="margin-bottom:6px">⛔ <span><strong>${ccpStores} cửa hàng vi phạm CCP</strong> – cần hành động trong 48h.</span></div>`;
+        if (reaudit > 0 && !riskStores && !ccpStores) alerts += `<div class="alert ay">⚠️ <span><strong>${reaudit} cửa hàng</strong> dưới 85% cần tái audit.</span></div>`;
+        bar.innerHTML = alerts;
       }
     }
 
-    function renderAuditForm() {
-      const crit = D.auditCriteria;
-      if (!crit.length) { $('audit-criteria-container').innerHTML = '<div class="empty-state">Tải tiêu chí thất bại</div>'; return; }
-
-      // Group by Major Title (ID before first dot)
-      const sections = {};
-      crit.forEach(c => {
-        const fullId = String(c.id).trim();
-        const majorId = fullId.split('.')[0];
-        if (!sections[majorId]) {
-          sections[majorId] = {
-            id: majorId,
-            name: c.section || 'Hạng mục ' + majorId,
-            subIds: [],
-            max: 0,
-            std: 0
-          };
-        }
-        // Collect sub-IDs for parentheses note (e.g. 1.1, 1.2)
-        const parts = fullId.split('.');
-        if (parts.length === 2) {
-          sections[majorId].subIds.push(fullId);
-          if (!c.section || c.section.includes('Giai đoạn')) sections[majorId].name = c.criterion;
-        }
-        // Include leaf nodes or scoreable items in totals
-        if (c.maxScore > 0) {
-          sections[majorId].max += c.maxScore;
-          sections[majorId].std += c.standardScore;
-        }
-      });
-
-      let html = '';
-      let maxTotal = 0, stdTotal = 0;
-      Object.keys(sections).sort((a, b) => Number(a) - Number(b)).forEach(key => {
-        const s = sections[key];
-        if (s.max === 0) return;
-        maxTotal += s.max; stdTotal += s.std;
-        const subNote = s.subIds.length ? ` <span style="font-weight:400;color:var(--gray);font-size:11px">(${s.subIds.join('; ')})</span>` : '';
-        html += `<div class="audit-row">
-      <div class="audit-name"><strong>${s.id}.</strong> ${s.name}${subNote}</div>
-      <div class="audit-std" title="Điểm chuẩn">${s.std}</div>
-      <div class="audit-max">/${s.max}</div>
-      <input class="audit-inp" id="ac_${s.id}" data-max="${s.max}" type="number" min="0" max="${s.max}" value="${s.std}" oninput="calcAuditScore()">
-    </div>`;
-      });
-
-      $('audit-criteria-container').innerHTML = html;
-      $('audit-std-total').textContent = stdTotal;
-      $('audit-max-total').textContent = maxTotal;
-      calcAuditScore();
-    }
-
-    function renderAuditGuide() {
-      const crit = D.auditCriteria;
-      if (!crit.length) { $('audit-guide').innerHTML = '<div class="empty-state">Chưa có dữ liệu</div>'; return; }
-      let html = '';
-      let section = '';
-      crit.forEach(c => {
-        if (c.section !== section) { section = c.section; html += `<div class="audit-section-hd">${section}</div>`; }
-        html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span>${c.criterion}</span>
-      <span style="color:var(--blue);font-weight:600">Chuẩn: ${c.standardScore}/${c.maxScore}</span>
-    </div>`;
-      });
-      $('audit-guide').innerHTML = html;
-    }
-
-    function calcAuditScore() {
-      const inps = document.querySelectorAll('.audit-inp');
-      let total = 0;
-      inps.forEach(inp => { total += parseInt(inp.value) || 0; });
-      const el = $('audit-total'), st = $('audit-status');
-      el.textContent = total;
-      if (total >= 85) { el.style.color = 'var(--green)'; st.textContent = '✓ Đạt tiêu chuẩn (≥85)'; st.style.color = 'var(--green)'; }
-      else if (total >= 70) { el.style.color = 'var(--gold)'; st.textContent = '⚠ Cần tái audit trong 15 ngày'; st.style.color = 'var(--gold)'; }
-      else { el.style.color = 'var(--red)'; st.textContent = '✗ Dưới tiêu chuẩn – Hành động ngay'; st.style.color = 'var(--red)'; }
-    }
-
-    async function loadAuditData() {
-      if (!CFG.scriptUrl) return;
-      const data = await api({ action: 'getAuditData' });
-      if (data.ok) {
-        D.auditList = data.auditList || [];
-        D.kpi.auditAvg = data.avg || 0;
-        D.kpi.reauditCount = data.reauditCount || 0;
-        renderAuditTable();
-        renderAuditStats();
+    // Bug 8: date shown, ccpCount/riskCount as numbers, auditor name correct
+    function renderAuditDirectTable(list) {
+      const body = $('a-direct-body');
+      if (!list.length) {
+        body.innerHTML = '<tr><td colspan="9"><div class="empty-state" style="padding:16px">Chưa có dữ liệu audit. Nhấn "Đồng bộ".</div></td></tr>';
+        return;
       }
-    }
-
-    function renderAuditTable() {
-      const body = $('audit-body-direct');
-      if (!D.auditList.length) { body.innerHTML = '<tr><td colspan="6"><div class="empty-state" style="padding:16px">Chưa có dữ liệu. Nhấn "Làm mới".</div></td></tr>'; return; }
-      body.innerHTML = D.auditList.map(a => {
-        const c = scoreColor(a.score);
+      body.innerHTML = list.map(a => {
+        const pctColor = a.pct >= 85 ? 'var(--green)' : a.pct >= 70 ? 'var(--gold)' : 'var(--red)';
+        const badge = a.pass
+          ? '<span class="bdg bg2">ĐẠT</span>'
+          : `<span class="bdg br2">KHÔNG ĐẠT${a.hasRISK ? ' · RISK' : a.hasCCP ? ' · CCP' : ''}</span>`;
+        const ccpNum  = a.ccpCount  != null ? a.ccpCount  : (a.hasCCP  ? '!' : '0');
+        const riskNum = a.riskCount != null ? a.riskCount : (a.hasRISK ? '!' : '0');
         return `<tr>
-      <td style="font-weight:600">${a.name}</td>
-      <td style="color:${c};font-weight:700">${a.score}/100</td>
-      <td>${a.date || '–'}</td>
-      <td>${scoreBadge(a.score)}</td>
-      <td style="max-width:200px;white-space:normal;font-size:12px">${a.note || '–'}</td>
-      <td><button class="btn bo bsm" onclick="viewAuditReport('${a.name}',${a.score})">📋 BB</button></td>
-    </tr>`;
+          <td style="font-weight:600">${a.store}</td>
+          <td style="font-size:12px">${fmtViDate(a.date) !== '–' ? fmtViDate(a.date) : fmtViDate(a.timestamp)}</td>
+          <td style="color:${pctColor};font-weight:700;font-size:15px">${a.pct}%</td>
+          <td style="font-size:12px;color:var(--gray)">${a.achieved}/${a.effectiveMax}${a.naTotal > 0 ? ` <span title="NA loại ra" style="color:var(--gray)">(-${a.naTotal}đ NA)</span>` : ''}</td>
+          <td>${Number(ccpNum) > 0 ? `<span class="bdg br2" style="font-size:10px">${ccpNum} CCP</span>` : '<span style="color:var(--gray);font-size:12px">–</span>'}</td>
+          <td>${Number(riskNum) > 0 ? `<span class="bdg br2" style="font-size:10px">${riskNum} RISK</span>` : '<span style="color:var(--gray);font-size:12px">–</span>'}</td>
+          <td>${badge}</td>
+          <td style="font-size:12px">${safeAuditorName(a.auditor)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn bo bsm" onclick="openAuditDetail('${a.store}','${a.timestamp || ''}','direct')">🔍 Chi tiết</button>
+            <button class="btn bo bsm" style="margin-top:3px" onclick="openAuditReportForStore('${a.store}','${a.timestamp || ''}')">📋 BB</button>
+            <button class="btn bo bsm" style="margin-top:3px" onclick="aiDirectAuditAnalysis('${a.store}','${a.timestamp || ''}');openAuditDetail('${a.store}','${a.timestamp || ''}','direct')">🤖</button>
+          </td>
+        </tr>`;
       }).join('');
     }
 
-    function renderAuditStats() {
-      const avg = D.kpi.auditAvg || 0, cnt = D.kpi.reauditCount || 0;
-      const ae = $('audit-avg'); if (ae) { ae.textContent = avg + '/100'; ae.style.color = scoreColor(avg); }
-      const as = $('audit-avg-sub'); if (as) { as.textContent = avg >= 85 ? '✓ Đạt mục tiêu ≥85' : 'Cần cải thiện'; as.className = 'kc ' + (avg >= 85 ? 'up' : 'dn'); }
-      const ar = $('audit-reaudit-cnt'); if (ar) ar.textContent = cnt;
-      const ad = $('audit-done'); if (ad) ad.textContent = D.auditList.length;
-      const ac = $('audit-alerts-container');
-      if (ac) ac.innerHTML = cnt > 0 ? `<div class="alert ay">⚠️ <span><strong>${cnt} cửa hàng</strong> dưới 85 điểm: ${D.auditList.filter(a => a.score < 85).map(a => `${a.name}(${a.score}đ)`).join(', ')}</span></div>` : '';
+    // Bug 8 history: loại audit correct, auditor name correct, timestamp formatted
+    function renderAuditHistory(results) {
+      const body = $('a-history-body');
+      if (!results.length) { body.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:12px">Chưa có dữ liệu</div></td></tr>'; return; }
+      body.innerHTML = results.slice(0, 20).map(a => {
+        const pctColor = a.pct >= 85 ? 'var(--green)' : a.pct >= 70 ? 'var(--gold)' : 'var(--red)';
+        return `<tr>
+          <td style="font-size:11px;color:var(--gray)">${fmtViDate(a.timestamp)}</td>
+          <td style="font-weight:600">${a.store}</td>
+          <td style="font-size:12px">${a.auditType || 'Audit trực tiếp'}</td>
+          <td style="color:${pctColor};font-weight:700">${a.pct}%</td>
+          <td>${a.pass ? '<span class="bdg bg2">ĐẠT</span>' : '<span class="bdg br2">KHÔNG ĐẠT</span>'}</td>
+          <td style="font-size:12px">${safeAuditorName(a.auditor)}</td>
+          <td><button class="btn bo bsm" onclick="openAuditDetail('${a.store}','${a.timestamp || ''}','direct')">🔍</button></td>
+        </tr>`;
+      }).join('');
     }
 
-    async function loadSecretAudit() {
-      load('Đang tải audit bí ẩn...');
-      const data = await api({ action: 'getSecretAudit' });
+    // Bug 3: Export Excel with full checklist data
+    function exportAuditDirectXLSX() {
+      if (!_auditDirectData.allResults.length) { toast('Không có dữ liệu', 'twarn'); return; }
+      const rows = [['Thời gian','Cửa hàng','Loại audit','Điểm %','Điểm đạt','Tối đa hiệu lực','NA','CCP','RISK','Trạng thái','Người audit','Nhận xét','Action Plan']];
+      _auditDirectData.allResults.forEach(a => rows.push([
+        fmtViDate(a.timestamp), a.store, a.auditType || '', a.pct, a.achieved, a.effectiveMax,
+        a.naTotal, a.ccpCount || 0, a.riskCount || 0, a.status, safeAuditorName(a.auditor), a.note || '', a.actionPlan || ''
+      ]));
+      // Add blank row then detail header
+      rows.push([]);
+      rows.push(['--- CHI TIẾT VI PHẠM ---']);
+      rows.push(['Thời gian','Cửa hàng','Nhóm','Hạng mục','Loại vi phạm','Điểm tối đa']);
+      _auditDirectData.allResults.forEach(a => {
+        (a.issues || []).forEach(issue => {
+          rows.push([fmtViDate(a.timestamp), a.store, issue.group, issue.item, issue.verdict, issue.maxPts]);
+        });
+      });
+      exportXLSX(rows, 'Audit_Direct_' + new Date().toLocaleDateString('vi-VN').replace(/\//g,'-'));
+    }
+
+    // ══ KHBA ═══════════════════════════════════════════════
+    async function loadKHBA() {
+      if (!CFG.scriptUrl) return;
+      const res = await api({ action: 'getKHBA' });
+      if (!res.ok) return;
+      _khbaData = res;
+      const avgEl = $('k-avg'); if (avgEl) avgEl.textContent = (res.avgKhba || 0) + '%';
+      const cntEl = $('k-cnt'); if (cntEl) cntEl.textContent = (res.khbaList || []).length;
+
+      const body = $('k-body');
+      if (!res.khbaList.length) {
+        body.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:16px">Chưa có dữ liệu KHBA.</div></td></tr>';
+        return;
+      }
+      body.innerHTML = res.khbaList.slice(0, 50).map(k => {
+        const c = k.score >= 85 ? 'var(--green)' : k.score >= 60 ? 'var(--gold)' : 'var(--red)';
+        return `<tr>
+          <td style="font-size:11px;color:var(--gray)">${fmtViDate(k.timestamp)}</td>
+          <td style="font-weight:600">${k.store}</td>
+          <td style="color:${c};font-weight:700">${k.score}%</td>
+          <td>${k.avgRating}/5 ⭐</td>
+          <td style="max-width:180px;white-space:normal;font-size:12px">${k.comment || '–'}</td>
+          <td>${k.pass ? '<span class="bdg bg2">Tốt</span>' : '<span class="bdg by2">Cần cải thiện</span>'}</td>
+          <td><button class="btn bo bsm" onclick="openAuditDetail('${k.store}','${k.timestamp || ''}','khba')">🔍</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function aiKHBAAnalysis() {
+      if (!_khbaData.khbaList.length) { toast('Tải dữ liệu KHBA trước', 'twarn'); return; }
+      load('AI đang phân tích KHBA...');
+      const summary = _khbaData.khbaList.slice(0, 15).map(k =>
+        `${k.store}: ${k.score}% (${k.avgRating}/5) – "${k.comment}"`
+      ).join('\n');
+      const r = await callAI(`Phân tích trải nghiệm khách hàng bí ẩn Phúc Tea:\n${summary}\n\nViết ngắn (tối đa 150 từ): điểm mạnh, điểm yếu phổ biến, 3 ưu tiên cải thiện.`);
       unload();
-      if (data.ok) {
-        D.secretList = data.secretAuditList || [];
-        const body = $('audit-body-secret');
-        if (!D.secretList.length) { body.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:16px">Chưa có dữ liệu</div></td></tr>'; return; }
-        body.innerHTML = D.secretList.map(a => {
-          const c = scoreColor(a.score);
-          return `<tr><td>${a.timestamp || '–'}</td><td>${a.store}</td><td style="color:${c};font-weight:700">${a.score}/100</td><td style="max-width:200px;white-space:normal">${a.comment || '–'}</td><td>${scoreBadge(a.score)}</td></tr>`;
-        }).join('');
-        toast('✅ Đã tải audit bí ẩn!');
-      } else toast('❌ ' + data.error, 'terr');
+      const card = $('k-ai-card'); if (card) card.style.display = '';
+      const body = $('k-ai-body'); if (body) body.textContent = r;
     }
 
-    async function saveAudit() {
-      const store = $('audit-store').value;
-      if (!store) { toast('⚠️ Chọn cửa hàng trước', 'twarn'); return; }
-      const scores = {};
-      let total = 0;
-      const inps = document.querySelectorAll('.audit-inp');
-      inps.forEach(inp => {
-        const id = inp.id.replace('ac_', '');
-        const v = parseInt(inp.value) || 0;
-        scores[id] = v;
-        total += v;
+    // Bug 3: KHBA export Excel
+    function exportKHBAXLSX() {
+      if (!_khbaData.khbaList.length) { toast('Không có dữ liệu KHBA', 'twarn'); return; }
+      const rows = [['Thời gian','Cửa hàng','Điểm %','Rating TB (1-5)','Số câu đánh giá','Nhận xét','Trạng thái']];
+      _khbaData.khbaList.forEach(k => rows.push([
+        fmtViDate(k.timestamp), k.store, k.score, k.avgRating, (k.ratings||[]).length, k.comment || '', k.pass ? 'Tốt' : 'Cần cải thiện'
+      ]));
+      exportXLSX(rows, 'KHBA_' + new Date().toLocaleDateString('vi-VN').replace(/\//g,'-'));
+    }
+
+    // ══ DETAIL MODAL ════════════════════════════════════════
+    // Shows: summary stats + violation COUNTS only + checklist table
+    async function openAuditDetail(store, timestamp, source) {
+      const modal = $('modal-audit-detail');
+      const body  = $('audit-detail-body');
+      const title = $('audit-detail-title');
+      if (!modal || !body) { toast('Modal không khả dụng', 'twarn'); return; }
+
+      let rec = null;
+      if (source === 'khba') {
+        rec = (_khbaData.khbaList || []).find(k => k.store === store && (!timestamp || k.timestamp === timestamp));
+      } else {
+        rec = (_auditDirectData.allResults || []).find(r => r.store === store && (!timestamp || r.timestamp === timestamp));
+        if (!rec) rec = (_auditDirectData.auditList || []).find(r => r.store === store);
+      }
+
+      if (title) title.textContent = rec ? `Chi tiết audit – ${store}` : 'Chi tiết audit';
+      body.innerHTML = !rec
+        ? '<div class="empty-state" style="padding:24px">Không tìm thấy dữ liệu. Thử đồng bộ lại.</div>'
+        : source === 'khba' ? _buildKHBADetailHtml(rec) : _buildDirectDetailHtml(rec);
+      openModal('modal-audit-detail');
+    }
+
+    function _buildKHBADetailHtml(rec) {
+      const sc = rec.score || 0;
+      const scColor = sc >= 85 ? 'var(--green)' : sc >= 60 ? 'var(--gold)' : 'var(--red)';
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;padding:4px 0 16px">
+          <div>
+            <div style="font-weight:700;font-size:17px;color:var(--brown)">${rec.store}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:3px">${fmtViDate(rec.timestamp)} · Khách hàng bí ẩn</div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="text-align:center"><div style="font-size:32px;font-weight:800;color:${scColor}">${sc}%</div><div style="font-size:11px;color:var(--gray)">Điểm KHBA</div></div>
+            <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--blue)">${rec.avgRating}/5</div><div style="font-size:11px;color:var(--gray)">Rating TB</div></div>
+          </div>
+        </div>
+        <div style="background:var(--gray-l);border-radius:var(--rs);padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--gray);letter-spacing:.5px;margin-bottom:6px">Nhận xét của khách</div>
+          <div style="font-size:13px;line-height:1.6;color:var(--brown)">${rec.comment || '(Không có nhận xét)'}</div>
+        </div>
+        ${(rec.ratings||[]).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap">${rec.ratings.map((r,i)=>`<div style="background:var(--gold-l);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--brown)"><span style="color:var(--gray)">Câu ${i+1}:</span> ${r}/5 ⭐</div>`).join('')}</div>` : ''}`;
+    }
+
+    function _buildDirectDetailHtml(rec) {
+      const issues    = rec.issues   || [];
+      const checklist = rec.checklist || [];
+      const answers   = rec.answers  || {};
+      const ccpCount  = issues.filter(i => i.verdict === 'CCP').length;
+      const riskCount = issues.filter(i => i.verdict === 'RISK').length;
+      const nokCount  = issues.filter(i => i.verdict === 'NOK').length;
+      const pctColor  = rec.pct >= 85 ? 'var(--green)' : rec.pct >= 70 ? 'var(--gold)' : 'var(--red)';
+
+      let html = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;padding:4px 0 16px">
+          <div>
+            <div style="font-weight:700;font-size:17px;color:var(--brown)">${rec.store}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:3px">${fmtViDate(rec.timestamp)} · ${rec.auditType || 'Audit'} · ${safeAuditorName(rec.auditor)}</div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <div style="text-align:center">
+              <div style="font-size:32px;font-weight:800;color:${pctColor}">${rec.pct}%</div>
+              <div style="font-size:11px;color:var(--gray)">${rec.achieved}/${rec.effectiveMax}đ${rec.naTotal>0?` (-${rec.naTotal} NA)`:''}</div>
+            </div>
+            <div>${rec.pass ? '<span class="bdg bg2" style="font-size:13px">ĐẠT</span>' : '<span class="bdg br2" style="font-size:13px">KHÔNG ĐẠT</span>'}</div>
+          </div>
+        </div>`;
+
+      // VIOLATION SUMMARY — totals only, no list per requirement #2
+      if (issues.length > 0) {
+        html += `<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:90px;border:1.5px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--red)">${issues.length}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">Tổng vi phạm</div>
+          </div>
+          <div style="flex:1;min-width:90px;border:1.5px solid ${ccpCount>0?'#FCA5A5':'var(--border)'};border-radius:var(--rs);padding:10px;text-align:center;background:${ccpCount>0?'var(--red-l)':''}">
+            <div style="font-size:22px;font-weight:800;color:${ccpCount>0?'var(--red)':'var(--gray)'}">${ccpCount}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">⛔ CCP</div>
+          </div>
+          <div style="flex:1;min-width:90px;border:1.5px solid ${riskCount>0?'#FCD34D':'var(--border)'};border-radius:var(--rs);padding:10px;text-align:center;background:${riskCount>0?'#FFFBEB':''}">
+            <div style="font-size:22px;font-weight:800;color:${riskCount>0?'#B45309':'var(--gray)'}">${riskCount}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">🔶 RISK</div>
+          </div>
+          <div style="flex:1;min-width:90px;border:1.5px solid var(--border);border-radius:var(--rs);padding:10px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--gray)">${nokCount}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">NOK</div>
+          </div>
+        </div>`;
+      } else {
+        html += `<div style="background:var(--green-l);border-radius:var(--rs);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--green)">✅ Không có vi phạm nào.</div>`;
+      }
+
+      // Checklist table
+      if (checklist.length > 0) {
+        const groups = {};
+        checklist.forEach(item => { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+        html += `<div class="tbl-wrap" style="max-height:360px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--rs)">
+          <table class="tbl" style="font-size:11px">
+            <thead style="position:sticky;top:0;z-index:2"><tr><th>Nhóm</th><th>Hạng mục</th><th style="width:50px">Loại</th><th style="width:90px">Kết quả</th><th style="width:60px;text-align:right">Điểm</th></tr></thead>
+            <tbody>`;
+        Object.entries(groups).forEach(([grp, items]) => {
+          items.forEach((item, idx) => {
+            const ans = answers[item.id] || '';
+            const isOK = ans === 'Đạt' || ans === 'OK';
+            const isNA = ans.includes('N/A') || ans === '';
+            const isIssue = !isOK && !isNA;
+            const typeEl = item.type === 'CCP'  ? '<span class="bdg br2" style="font-size:9px;padding:1px 4px">CCP</span>'
+                         : item.type === 'RISK' ? '<span style="font-size:9px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-weight:600">RISK</span>'
+                         : '<span style="font-size:10px;color:var(--gray)">OK</span>';
+            html += `<tr style="${isIssue?'background:#FEF2F2':''}">
+              <td style="color:var(--gray);font-size:10px">${idx===0?grp:''}</td>
+              <td style="${isIssue?'font-weight:600;color:var(--red)':''}">${item.item}</td>
+              <td>${typeEl}</td>
+              <td style="font-weight:600;color:${isNA?'var(--gray)':isOK?'var(--green)':'var(--red)'}">${isNA?'N/A':isOK?'✓ Đạt':'✗ Không đạt'}</td>
+              <td style="text-align:right;color:${isNA?'var(--gray)':isOK?'inherit':'var(--red)'}">${isNA?'–':isOK?item.maxPts:0}/${item.maxPts}</td>
+            </tr>`;
+          });
+        });
+        html += '</tbody></table></div>';
+      }
+
+      if (rec.note || rec.actionPlan) {
+        html += `<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">`;
+        if (rec.note)       html += `<div style="background:var(--gray-l);border-radius:var(--rs);padding:10px 12px"><div style="font-size:10px;color:var(--gray);font-weight:600;margin-bottom:3px">NHẬN XÉT</div><div style="font-size:12px">${rec.note}</div></div>`;
+        if (rec.actionPlan) html += `<div style="background:var(--blue-l);border-radius:var(--rs);padding:10px 12px"><div style="font-size:10px;color:var(--blue);font-weight:600;margin-bottom:3px">ACTION PLAN</div><div style="font-size:12px">${rec.actionPlan}</div></div>`;
+        html += `</div>`;
+      }
+
+      html += `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bo bsm" onclick="printDetailPDF('${rec.store}','${rec.timestamp||''}')">🖨️ In PDF chi tiết</button>
+        <button class="btn bo bsm" onclick="exportDetailXLSX('${rec.store}','${rec.timestamp||''}')">📥 Xuất Excel</button>
+        <button class="btn bo bsm" onclick="aiDirectAuditAnalysis('${rec.store}','${rec.timestamp||''}')">🤖 AI phân tích</button>
+        <button class="btn bo bsm" onclick="openAuditReportForStore('${rec.store}','${rec.timestamp||''}');closeModal('modal-audit-detail')">📋 Tạo biên bản</button>
+      </div>`;
+      return html;
+    }
+
+    // AI Analysis from detail modal or direct table
+    async function aiDirectAuditAnalysis(store, timestamp) {
+      const rec = (_auditDirectData.allResults||[]).find(r=>r.store===store&&(!timestamp||r.timestamp===timestamp))
+               || (_auditDirectData.auditList||[]).find(r=>r.store===store);
+      if (!rec) { toast('Không có dữ liệu audit', 'twarn'); return; }
+      load('AI đang phân tích...');
+      let aiText = '';
+      if (CFG.scriptUrl) {
+        const res = await api({ action:'aiAuditAnalysis', data:{ store, pct:rec.pct, issues:rec.issues||[], note:rec.note||'' } });
+        aiText = res.ok ? res.analysis : await callAI(`Audit ${store}: ${rec.pct}%. Vi phạm: ${(rec.issues||[]).map(i=>`[${i.verdict}] ${i.item}`).join(', ')||'Không có'}. Phân tích ngắn.`);
+      } else {
+        aiText = await callAI(`Audit ${store}: ${rec.pct}%. Vi phạm: ${(rec.issues||[]).map(i=>`[${i.verdict}] ${i.item}`).join(', ')||'Không có'}. Phân tích ngắn.`);
+      }
+      unload();
+      // Append AI result inside modal detail body
+      const body = $('audit-detail-body');
+      if (body) {
+        const prev = body.querySelector('.ai-result-block');
+        if (prev) prev.remove();
+        const div = document.createElement('div');
+        div.className = 'ai-result-block';
+        div.style.cssText = 'margin-top:12px;padding:12px 14px;background:var(--gold-l);border-radius:var(--rs);border-left:3px solid var(--gold)';
+        div.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--brown-m);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">🤖 Phân tích AI</div><div style="font-size:13px;line-height:1.65;color:var(--brown);white-space:pre-wrap">${aiText}</div>`;
+        body.appendChild(div);
+      }
+    }
+
+    // ── Biên bản: session change → auto-fill, date readonly ─
+    function onAuditSessionChange() {
+      const sessSel = $('ar-session'); if (!sessSel) return;
+      const opt = sessSel.options[sessSel.selectedIndex];
+      if (!opt || !opt.value) return;
+      const ts  = opt.value;
+      const src = (opt.dataset || {}).src || 'direct';
+      const store = ($('ar-store')||{}).value;
+
+      let rec = null;
+      if (src === 'khba') {
+        rec = (_khbaData.khbaList||[]).find(k=>k.store===store&&k.timestamp===ts);
+      } else {
+        rec = (_auditDirectData.allResults||[]).find(r=>r.store===store&&r.timestamp===ts);
+      }
+      if (!rec) return;
+
+      // Date: readonly display field (no manual editing)
+      if ($('ar-date-display')) $('ar-date-display').value = fmtViDate(rec.timestamp || rec.date || '');
+      // Also sync hidden date field for compat with genAuditReport
+      if ($('ar-date')) $('ar-date').value = rec.date || rec.timestamp || '';
+      // Auditor
+      const audName = safeAuditorName(rec.auditor || '');
+      if ($('ar-auditor')) $('ar-auditor').value = audName !== '–' ? audName : 'Dương Thanh Liêm';
+      // Note & action plan from data (only if user hasn't edited)
+      if ($('ar-note')   && !$('ar-note').dataset.userEdited)   $('ar-note').value   = rec.note       || '';
+      if ($('ar-action') && !$('ar-action').dataset.userEdited) $('ar-action').value = rec.actionPlan || '';
+      // Auto-fill email from store DB
+      const storeObj = (_allStores||[]).find(s=>s.name===store);
+      if ($('ar-email') && !$('ar-email').dataset.userEdited) {
+        $('ar-email').value = (storeObj && storeObj.email) ? storeObj.email : '';
+      }
+    }
+
+    // File attach helpers
+    function onAttachFileChange() {
+      const inp = $('ar-attach-file'); const lbl = $('ar-attach-name');
+      if (inp && lbl) lbl.textContent = inp.files.length ? Array.from(inp.files).map(f=>f.name).join(', ') : 'Chưa có tệp nào được chọn';
+    }
+    function onSchedFileChange() {
+      const inp = $('sched-file'); const lbl = $('sched-file-name');
+      if (inp && lbl) lbl.textContent = inp.files.length ? Array.from(inp.files).map(f=>f.name).join(', ') : 'Chưa có tệp nào được chọn';
+    }
+
+    // Biên bản store list (from audit history + static)
+    function populateAuditReportStores() {
+      const sel = $('ar-store'); if (!sel) return;
+      const storeSet = new Set();
+      (_auditDirectData.allResults||[]).forEach(r=>storeSet.add(r.store));
+      (_khbaData.khbaList||[]).forEach(k=>storeSet.add(k.store));
+      (_allStores||[]).forEach(s=>storeSet.add(s.name));
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">-- Chọn cửa hàng --</option>' +
+        [...storeSet].filter(Boolean).sort().map(s=>`<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('');
+      ['audit-store','rpt-audit-store'].forEach(id => {
+        const el=$(id); if (!el) return;
+        const c2=el.value;
+        el.innerHTML='<option value="">-- Chọn cửa hàng --</option>'+
+          [...storeSet].filter(Boolean).sort().map(s=>`<option value="${s}" ${s===c2?'selected':''}>${s}</option>`).join('');
       });
-      load('Đang lưu audit...');
-      const res = await api({
-        action: 'saveAudit',
-        data: {
-          store, score: total, date: $('audit-date').value,
-          type: $('audit-type').value, actionPlan: $('action-plan').value,
-          scores, auditor: 'Dương Thanh Liêm'
-        }
-      });
+    }
+
+    // Schedule: ALL stores from DB
+    function populateScheduleStores() {
+      const sel = $('sched-store'); if (!sel) return;
+      const allNames = (_allStores||[]).map(s=>s.name);
+      const extra = [...new Set([...(_auditDirectData.auditList||[]).map(a=>a.store), ...(_khbaData.latestPerStore||[]).map(k=>k.store)])];
+      const merged = [...new Set([...allNames, ...extra])].filter(Boolean).sort();
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">-- Chọn cửa hàng --</option>' +
+        merged.map(n=>`<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+      // Staff dropdown
+      const staffSel = $('sched-staff');
+      if (staffSel) {
+        const staffNames = (D.employees||D.staffList||[]).filter(s=>s&&s.name);
+        const curStaff = staffSel.value;
+        staffSel.innerHTML = '<option value="">-- Chọn nhân sự --</option>' +
+          staffNames.map(s=>`<option value="${s.name}" ${s.name===curStaff?'selected':''}>${s.display||s.name}</option>`).join('');
+      }
+    }
+
+    // Auto-fill email when store selected in schedule
+    function onSchedStoreChange() {
+      const store = ($('sched-store')||{}).value;
+      const storeObj = (_allStores||[]).find(s=>s.name===store);
+      const emailEl = $('sched-email');
+      if (emailEl && !emailEl.dataset.userEdited) emailEl.value = (storeObj&&storeObj.email)?storeObj.email:'';
+      if ($('sched-email-preview') && $('sched-email-preview').style.display!=='none') buildSchedEmailBody();
+    }
+
+    function toggleSchedEmailPreview() {
+      const div = $('sched-email-preview'); if (!div) return;
+      if (div.style.display === 'none') { div.style.display=''; buildSchedEmailBody(); }
+      else div.style.display = 'none';
+    }
+
+    function buildSchedEmailBody() {
+      const store  = ($('sched-store')||{}).value || '(chưa chọn)';
+      const date   = ($('sched-date') ||{}).value || '';
+      const type   = ($('sched-type') ||{}).value || 'Audit trực tiếp';
+      const staff  = ($('sched-staff')||{}).value || 'Bộ phận Operations';
+      const note   = ($('sched-note') ||{}).value || '';
+      const dateVN = date ? date.split('-').reverse().join('/') : '(chưa chọn)';
+      const body = `Kính gửi Quản lý cửa hàng ${store},
+
+Chúng tôi xin thông báo lịch kiểm tra chất lượng vận hành như sau:
+
+  Cửa hàng      : ${store}
+  Ngày kiểm tra : ${dateVN}
+  Hình thức     : ${type}
+  Người phụ trách: ${staff}
+  Ghi chú       : ${note || 'Không có'}
+
+Vui lòng chuẩn bị đầy đủ và đảm bảo vận hành đúng tiêu chuẩn.
+Nếu cần thay đổi lịch, xin liên hệ trước tối thiểu 24 giờ.
+
+Trân trọng,
+Dương Thanh Liêm – Operations Phúc Tea`;
+      const el = $('sched-email-body');
+      if (el && !el.dataset.userEdited) el.value = body;
+    }
+
+    async function saveScheduleAudit() {
+      const store     = ($('sched-store') ||{}).value;
+      const date      = ($('sched-date')  ||{}).value;
+      const type      = ($('sched-type')  ||{}).value || 'Audit trực tiếp';
+      const staff     = ($('sched-staff') ||{}).value || '';
+      const note      = ($('sched-note')  ||{}).value || '';
+      const email     = ($('sched-email') ||{}).value || '';
+      const emailBody = $('sched-email-body') ? $('sched-email-body').value : '';
+      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      if (!date)  { toast('⚠️ Chọn ngày audit', 'twarn'); return; }
+      load('Đang lên lịch audit...');
+      const res = await api({ action:'scheduleAudit', data:{ store, date, auditType:type, note, email, staff, emailBody } });
       unload();
       if (res.ok) {
-        toast(`✅ Đã lưu audit ${store}: ${total}/100`);
-        $('action-plan').value = '';
-        await loadAuditData();
-        renderDashboard();
-      } else toast('❌ ' + (res.error || 'Lỗi'), 'terr');
+        toast('✅ ' + (res.message||'Đã lên lịch audit'));
+        ['sched-store','sched-date','sched-note','sched-email'].forEach(id=>{const el=$(id);if(el)el.value='';});
+        const prev=$('sched-email-preview'); if(prev) prev.style.display='none';
+      } else toast('❌ '+(res.error||'Lỗi'),'terr');
     }
 
-    async function aiAuditAdvice() {
-      const store = $('audit-store').value; const total = $('audit-total').textContent;
+    function openScheduleAudit() {
+      showAuditTab('schedule', null);
+      document.querySelectorAll('.ptab').forEach(b => b.classList.remove('on'));
+      const btn = $('atab-schedule-btn'); if (btn) btn.classList.add('on');
+      populateScheduleStores();
+    }
+
+
+
+    // ── onAuditStoreChange: populate session dropdown ─────
+    function onAuditStoreChange() {
+      const store = ($('ar-store')||{}).value; if (!store) return;
+      const typeFilter = ($('ar-type-filter')||{value:'all'}).value;
+      const sessions = (_auditDirectData.allResults||[])
+        .filter(r => r.store === store && (typeFilter === 'all' || r.auditType === typeFilter))
+        .concat(typeFilter === 'all' || typeFilter === 'KHBA'
+          ? (_khbaData.khbaList||[]).filter(k=>k.store===store).map(k=>({...k, auditType:'KHBA', pct:k.score, _src:'khba'}))
+          : [])
+        .sort((a,b) => b.rawMs - a.rawMs);
+      const sessSel = $('ar-session');
+      if (sessSel) {
+        sessSel.innerHTML = '<option value="">-- Chọn lần audit --</option>' +
+          sessions.map(s => `<option value="${s.timestamp||''}" data-src="${s._src||'direct'}">${fmtViDate(s.timestamp)} – ${s.auditType||'Audit'} – ${s.pct}%</option>`).join('');
+        if (sessions.length) { sessSel.selectedIndex = 1; onAuditSessionChange(); }
+      }
+    }
+
+    // ── openAuditReportForStore ───────────────────────────
+    function openAuditReportForStore(storeName, timestamp) {
+      showAuditTab('areport', null);
+      document.querySelectorAll('.ptab').forEach(b => b.classList.remove('on'));
+      const btn = $('atab-report-btn'); if (btn) btn.classList.add('on');
+      populateAuditReportStores();
+      const sel = $('ar-store');
+      if (sel) {
+        for (let i=0;i<sel.options.length;i++) { if (sel.options[i].value===storeName){sel.selectedIndex=i;break;} }
+        onAuditStoreChange();
+        if (timestamp) {
+          const ss=$('ar-session');
+          if (ss) { for(let i=0;i<ss.options.length;i++){if(ss.options[i].value===timestamp){ss.selectedIndex=i;break;}} onAuditSessionChange(); }
+        }
+      }
+    }
+
+    // ── genAuditReport ────────────────────────────────────
+    async function genAuditReport() {
+      const store = ($('ar-store')||{}).value;
       if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      const sessSel = $('ar-session');
+      const ts  = sessSel ? sessSel.value : '';
+      const src = sessSel ? ((sessSel.options[sessSel.selectedIndex]||{}).dataset||{}).src || 'direct' : 'direct';
+      let rec = src === 'khba'
+        ? (_khbaData.khbaList||[]).find(k=>k.store===store&&(!ts||k.timestamp===ts))
+        : (_auditDirectData.allResults||[]).find(r=>r.store===store&&(!ts||r.timestamp===ts)) || (_auditDirectData.auditList||[]).find(r=>r.store===store);
+
+      load('Đang tạo biên bản...');
+      let reportData = null;
+      if (CFG.scriptUrl && rec) {
+        const res = await api({ action:'generateAuditReport', data:{
+          store,
+          auditDate:  ($('ar-date-display')||{}).value || (rec ? rec.date : ''),
+          auditor:    ($('ar-auditor')||{}).value || 'Dương Thanh Liêm',
+          auditType:  rec ? (rec.auditType||'Audit trực tiếp') : 'Audit trực tiếp',
+          answers:    rec ? (rec.answers||{}) : {},
+          note:       ($('ar-note')||{}).value    || (rec ? rec.note       : ''),
+          actionPlan: ($('ar-action')||{}).value  || (rec ? rec.actionPlan : '')
+        }});
+        unload();
+        if (res.ok) reportData = res.report;
+        else { toast('❌ '+(res.error||'Lỗi tạo biên bản'),'terr'); return; }
+      } else {
+        unload();
+        if (!rec) { toast('⚠️ Không tìm thấy dữ liệu audit cho cửa hàng này','twarn'); return; }
+        reportData = {
+          system:'HỆ THỐNG PHÚC TEA', address:'200 Trần Hưng Đạo, Ninh Kiều, Cần Thơ',
+          leader:'Dương Thanh Liêm – Operations Leader', phone:'0357 636 539',
+          email:'duongthanhliem@phuctea.com.vn',
+          legalBasis:['Nội quy vận hành nội bộ hệ thống Phúc Tea','Hợp đồng nhượng quyền thương mại','Biên bản kiểm tra thực tế'],
+          store, auditDate: fmtViDate(rec.date||rec.timestamp),
+          auditor: safeAuditorName(rec.auditor)||'Dương Thanh Liêm',
+          auditType: rec.auditType||'Audit trực tiếp',
+          reportDate: new Date().toLocaleDateString('vi-VN'),
+          achieved:rec.achieved||rec.score||0, effectiveMax:rec.effectiveMax||0,
+          naTotal:rec.naTotal||0, maxTotal:rec.maxTotal||0,
+          pct:rec.pct||rec.score||0, pass:rec.pass, status:rec.status||'–',
+          hasCCP:rec.hasCCP, hasRISK:rec.hasRISK, issues:rec.issues||[], issuesByGroup:{},
+          note: ($('ar-note')||{}).value||rec.note||'',
+          actionPlan: ($('ar-action')||{}).value||rec.actionPlan||'',
+          commitment:'Cửa hàng phải phản hồi và thực hiện khắc phục trong vòng 48 giờ.',
+          warning:'Lưu ý: 3 lần vi phạm nghiêm trọng có thể dẫn đến chấm dứt hợp đồng thương hiệu.',
+          reauditDeadline: rec.hasCCP||rec.hasRISK||(rec.pct||0)<70?'48 giờ':!rec.pass?'15 ngày':'Không cần tái audit'
+        };
+      }
+      const txt = buildAuditReportText(reportData);
+      _auditReportText = txt;
+      const pre=$('ar-preview'); if(pre) pre.textContent=txt;
+      const cb=$('ar-copy-btn'); if(cb) cb.style.display='';
+      toast('✅ Đã tạo biên bản cho '+store);
+    }
+
+    // ── buildAuditReportText ──────────────────────────────
+    function buildAuditReportText(r) {
+      const line='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+      const pct=r.pct||0;
+      const reauditMsg=!r.pass?(pct<70||r.hasCCP||r.hasRISK?'Tái audit bắt buộc trong 48 GIỜ':'Tái audit trong vòng 15 ngày'):'Không cần tái audit';
+      let issueBlock='';
+      if((r.issues||[]).length){
+        issueBlock='\n'+line+'\n📋 DANH SÁCH VI PHẠM:\n';
+        const byGroup=r.issuesByGroup||{};
+        const groups=Object.keys(byGroup);
+        if(groups.length){ groups.forEach(g=>{issueBlock+=`\n▸ ${g}:\n`;byGroup[g].forEach(i=>{issueBlock+=`  [${i.verdict}] ${i.item} (${i.maxPts}đ)\n`;}); }); }
+        else (r.issues||[]).forEach(i=>{issueBlock+=`  [${i.verdict}] ${i.group} > ${i.item}\n`;});
+      }
+      return `${r.system}\n${r.address}\n${r.leader}\nSĐT: ${r.phone} · Email: ${r.email}\n${line}\n               BIÊN BẢN AUDIT – ${(r.auditType||'').toUpperCase()}\n${line}\nCƠ SỞ PHÁP LÝ:\n${(r.legalBasis||[]).map(l=>'  • '+l).join('\n')}\n\n${line}\nTHÔNG TIN KIỂM TRA:\nCửa hàng      : ${r.store}\nNgày audit    : ${fmtViDate(r.auditDate)}\nNgày lập BB   : ${r.reportDate}\nNgười audit   : ${r.auditor}\nLoại audit    : ${r.auditType}\n${line}\nKẾT QUẢ TỔNG HỢP:\nĐiểm đạt      : ${r.achieved} / ${r.effectiveMax} điểm hiệu lực${r.naTotal>0?` (${r.naTotal}đ N/A đã loại)`:''}\nTổng tối đa   : ${r.maxTotal} điểm\nĐiểm %        : ${pct}%\nTrạng thái    : ${r.status||(r.pass?'ĐẠT':'KHÔNG ĐẠT')}\nVi phạm CCP   : ${r.hasCCP?'CÓ – xử lý ngay':'Không'}\nVi phạm RISK  : ${r.hasRISK?'CÓ – điểm toàn bộ = 0':'Không'}\nTái audit     : ${reauditMsg}\n${issueBlock}\n${line}\nNHẬN XÉT TỔNG THỂ:\n${r.note||'(Không có ghi chú thêm)'}\n${line}\nACTION PLAN – THỰC HIỆN TRONG 48 GIỜ:\n${r.actionPlan||(r.pass?'Duy trì tiêu chuẩn.':'(Vui lòng bổ sung action plan.)')}\n${line}\nCAM KẾT:\n${r.commitment}\n⚠️  ${r.warning}\n${line}\nKý xác nhận:\n\nNgười thực hiện audit              Đại diện cửa hàng\n..............................     ..............................\n${r.auditor}\n\nNgày lập: ${r.reportDate}`;
+    }
+
+    // ── aiAuditAnalysis (biên bản tab) ───────────────────
+    async function aiAuditAnalysis() {
+      const store = ($('ar-store')||{}).value;
+      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
+      const rec  = (_auditDirectData.auditList||[]).find(a=>a.store===store);
+      const khba = (_khbaData.latestPerStore||[]).find(k=>k.store===store);
       load('AI đang phân tích...');
-      const r = await callAI(`Cửa hàng ${store} vừa audit ${total}/100. Đưa action plan 5 bước cụ thể để cải thiện trong 15 ngày. Ngắn gọn.`);
-      unload(); $('action-plan').value = r; toast('🤖 AI đã đề xuất action plan!');
-    }
-
-    function viewAuditReport(store, score) {
-      const sel = $('rpt-audit-store');
-      for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].value === store || sel.options[i].text === store) { sel.selectedIndex = i; break; } }
-      showAuditTab('report', document.querySelectorAll('.ptab')[3]);
-      genAuditReport();
-    }
-
-    function genAuditReport() {
-      const store = $('rpt-audit-store').value || $('rpt-audit-store').options[$('rpt-audit-store').selectedIndex]?.text;
-      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
-      const type = $('rpt-audit-type').value;
-      const entry = D.auditList.find(a => a.name === store) || D.secretList.find(a => a.store === store) || { score: 0, date: '–' };
-      const score = entry.score || 0;
-      const today = new Date().toLocaleDateString('vi-VN');
-      const status = score >= 85 ? 'ĐẠT TIÊU CHUẨN' : score >= 70 ? 'CẦN TÁI AUDIT' : 'DƯỚI TIÊU CHUẨN – KHẨN CẤP';
-      auditReportText = `BIÊN BẢN AUDIT – ${type.toUpperCase()}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Cửa hàng     : ${store}
-Loại audit   : ${type}
-Ngày audit   : ${entry.date || today}
-Ngày lập     : ${today}
-Người thực hiện: Dương Thanh Liêm – Operations Leader
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 KẾT QUẢ TỔNG ĐIỂM: ${score}/100
-Trạng thái   : ${status}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${score < 85 ? `⚠️ ĐIỂM CẦN CẢI THIỆN:
-• Tái audit trong vòng 15 ngày
-• Lên action plan chi tiết từng tiêu chí yếu
-• Trưởng ca giám sát hàng ngày
-• Báo cáo cải tiến sau 7 ngày`: `✅ GHI NHẬN THÀNH TÍCH:
-• Duy trì kết quả hiện tại
-• Chia sẻ best practice toàn hệ thống
-• Chuẩn bị cho audit kỳ tiếp theo`}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 ACTION PLAN (hoàn thành trong 48h):
-${score < 85 ? '1. Họp nhân viên phổ biến kết quả trong 24h\n2. Lên lịch tái audit trong 15 ngày\n3. Trưởng ca giám sát hàng ngày\n4. Báo cáo tiến độ cải tiến sau 7 ngày' : '1. Ghi nhận & khen thưởng nhân viên\n2. Duy trì tiêu chuẩn\n3. Chia sẻ kết quả tốt toàn hệ thống'}
-
-Người lập: Dương Thanh Liêm · Operations Leader · ${today}
-Xác nhận: ___________________________`;
-      $('audit-report-pre').textContent = auditReportText;
-      $('audit-report-pre').style.color = 'var(--brown)';
-      $('btn-copy-audit').style.display = '';
-      $('btn-send-audit').style.display = '';
-      $('ae-body').value = auditReportText;
-      $('ae-subject').value = `Biên bản Audit ${type} – ${store}`;
-    }
-
-    async function aiGenAuditReport() {
-      const store = $('rpt-audit-store').value;
-      if (!store) { toast('⚠️ Chọn cửa hàng', 'twarn'); return; }
-      const entry = D.auditList.find(a => a.name === store) || { score: 0 };
-      load('AI đang soạn biên bản...');
-      const r = await callAI(`Soạn biên bản audit cho ${store}, điểm ${entry.score}/100. Bao gồm kết quả từng nhóm tiêu chí, nhận xét chi tiết, action plan cụ thể có deadline. Chuyên nghiệp.`);
-      unload(); auditReportText = r;
-      $('audit-report-pre').textContent = r; $('audit-report-pre').style.color = 'var(--brown)';
-      $('btn-copy-audit').style.display = ''; $('btn-send-audit').style.display = '';
-      $('ae-body').value = r;
-      toast('🤖 AI đã soạn biên bản!');
-    }
-
-    function openAuditEmailModal() { openModal('modal-audit-email'); }
-    async function sendAuditEmail() {
-      const to = $('ae-to').value.trim();
-      if (!to) { toast('⚠️ Nhập email', 'twarn'); return; }
-      const schedule = $('ae-schedule').value;
-      load('Đang gửi...');
-      const action = schedule ? 'scheduleEmail' : 'sendEmail';
-      const res = await api({ action, to, subject: $('ae-subject').value, body: $('ae-body').value, scheduledTime: schedule || undefined });
+      let aiText = '';
+      if (CFG.scriptUrl) {
+        const res = await api({ action:'aiAuditAnalysis', data:{ store, pct:rec?rec.pct:0, issues:rec?rec.issues:[], note:rec?rec.note:'', khbaData:khba||null }});
+        aiText = res.ok ? res.analysis : await callAI(`Audit ${store}: ${rec?rec.pct:0}%. Phân tích ngắn, 3 ưu tiên.`);
+      } else {
+        aiText = await callAI(`Audit ${store}: ${rec?rec.pct:'?'}%. Phân tích ngắn, 3 ưu tiên.`);
+      }
       unload();
-      if (res.ok) { toast('✅ ' + (schedule ? 'Đã lên lịch gửi' : 'Đã gửi biên bản!')); closeModal('modal-audit-email'); }
-      else toast('❌ ' + res.error, 'terr');
+      const card=$('ar-ai-card'); if(card) card.style.display='';
+      const body=$('ar-ai-body'); if(body) body.textContent=aiText;
     }
 
-    function exportAuditData() {
-      if (!D.auditList.length) { toast('Không có dữ liệu', 'twarn'); return; }
-      const rows = [['Cửa hàng', 'Điểm', 'Ngày', 'Trạng thái', 'Ghi chú']];
-      D.auditList.forEach(a => rows.push([a.name, a.score, a.date, a.score >= 85 ? 'Đạt' : 'Tái audit', a.note]));
-      exportXLSX(rows, 'KetQuaAudit');
-    }
-    function exportAuditReport() {
-      if (!auditReportText) { toast('Tạo biên bản trước', 'twarn'); return; }
-      const rows = auditReportText.split('\n').map(line => [line]);
-      exportXLSX(rows, 'BienBanAudit');
+    // ── printAuditReport (biên bản) ─────────────────────
+    function printAuditReport() {
+      if (!_auditReportText) { toast('Tạo biên bản trước','twarn'); return; }
+      const pWin=window.open('','','height=900,width=800');
+      pWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Biên bản Audit</title>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>body{font-family:'Be Vietnam Pro',sans-serif;padding:32px 40px;color:#222;font-size:13px;line-height:1.85}pre{white-space:pre-wrap;font-family:inherit}</style>
+        </head><body><pre>${_auditReportText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
+      pWin.document.close();
+      setTimeout(()=>pWin.print(),500);
     }
 
-    async function aiSecretAnalysis() {
-      load('AI đang phân tích...');
-      const ctx = D.secretList.slice(0, 10).map(a => `${a.store}: ${a.score}đ – ${a.comment}`).join('\n');
-      const r = await callAI(`Phân tích kết quả audit khách hàng bí ẩn:\n${ctx || '(Chưa có dữ liệu)'}\nĐề xuất cải thiện trải nghiệm khách hàng.`);
-      unload(); $('secret-ai').innerHTML = r.replace(/\n/g, '<br>'); $('secret-ai').style.color = 'var(--brown)';
+    // ── sendAuditReportEmail ─────────────────────────────
+    async function sendAuditReportEmail() {
+      if (!_auditReportText) { toast('Tạo biên bản trước','twarn'); return; }
+      const store=($('ar-store')||{}).value;
+      let to = ($('ar-email')||{}).value || '';
+      if (!to) {
+        const storeObj=(_allStores||[]).find(s=>s.name===store);
+        to = (storeObj&&storeObj.email) ? storeObj.email : '';
+        to = prompt('Email cửa hàng/chủ chi nhánh:',to) || '';
+      }
+      if (!to) return;
+      load('Đang gửi biên bản...');
+      const res=await api({action:'sendEmail',to,subject:`Biên bản Audit – ${store} – ${new Date().toLocaleDateString('vi-VN')}`,body:_auditReportText});
+      unload();
+      if(res.ok) toast('✅ Đã gửi biên bản đến '+to);
+      else toast('❌ '+(res.error||'Lỗi gửi email'),'terr');
     }
+
+    // ── printDetailPDF ───────────────────────────────────
+    function printDetailPDF(store, timestamp) {
+      const rec=(_auditDirectData.allResults||[]).find(r=>r.store===store&&(!timestamp||r.timestamp===timestamp))
+             ||(_auditDirectData.auditList||[]).find(r=>r.store===store);
+      if(!rec){toast('Không có dữ liệu','twarn');return;}
+      const checklist=rec.checklist||[], answers=rec.answers||{}, issues=rec.issues||[];
+      const rows=checklist.map(item=>{
+        const ans=answers[item.id]||'';
+        const isOK=ans==='Đạt'||ans==='OK', isNA=ans.includes('N/A')||ans==='';
+        const isIssue=issues.some(i=>i.id===item.id);
+        return `<tr style="${isIssue?'background:#FEF2F2':''}"><td>${item.group}</td><td>${item.item}</td><td>${item.type}</td><td style="color:${isNA?'#888':isOK?'#15803D':'#DC2626'};font-weight:600">${isNA?'N/A':isOK?'✓ Đạt':'✗ Không đạt'}</td><td style="text-align:right">${isNA?'–':isOK?item.maxPts:0}/${item.maxPts}</td></tr>`;
+      }).join('');
+      const pWin=window.open('','','height=900,width=850');
+      pWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Audit – ${store}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>body{font-family:'Be Vietnam Pro',sans-serif;padding:28px 36px;color:#222;font-size:12px}.header{text-align:center;border-bottom:3px solid #F5A623;padding-bottom:12px;margin-bottom:16px}.logo{font-size:18px;font-weight:700;color:#3D2B1F}.kpis{display:flex;gap:16px;margin:12px 0;flex-wrap:wrap}.kpi-b{flex:1;min-width:80px;border:1px solid #E8E0D4;border-radius:8px;padding:8px;text-align:center}.kv{font-size:20px;font-weight:700}.pass{color:#15803D}.fail{color:#DC2626}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:11px}th,td{border:1px solid #E8E0D4;padding:5px 7px;text-align:left}th{background:#3D2B1F;color:#F5A623;font-weight:600}@media print{body{padding:16px 20px}}</style>
+        </head><body>
+        <div class="header"><div class="logo">⚡ PHÚC TEA – BIÊN BẢN AUDIT</div><div style="font-size:11px;color:#888;margin-top:3px">Kiểm soát chất lượng vận hành</div></div>
+        <div style="font-size:12px"><strong>Cửa hàng:</strong> ${store} &nbsp;|&nbsp; <strong>Ngày:</strong> ${fmtViDate(rec.timestamp)} &nbsp;|&nbsp; <strong>Người audit:</strong> ${safeAuditorName(rec.auditor)} &nbsp;|&nbsp; <strong>Loại:</strong> ${rec.auditType||'–'}</div>
+        <div class="kpis">
+          <div class="kpi-b"><div style="font-size:10px;color:#888">ĐIỂM</div><div class="kv ${rec.pct>=85?'pass':'fail'}">${rec.pct}%</div></div>
+          <div class="kpi-b"><div style="font-size:10px;color:#888">ĐẠT/TỐI ĐA</div><div class="kv">${rec.achieved}/${rec.effectiveMax}</div></div>
+          <div class="kpi-b"><div style="font-size:10px;color:#888">NA</div><div class="kv" style="color:#888">${rec.naTotal}đ</div></div>
+          <div class="kpi-b"><div style="font-size:10px;color:#888">TRẠNG THÁI</div><div class="kv ${rec.pass?'pass':'fail'}">${rec.status||'–'}</div></div>
+        </div>
+        ${issues.length?`<div style="background:#FEF2F2;border:1px solid #FCA5A5;padding:8px 12px;border-radius:6px;margin:10px 0;font-size:12px">⚠️ <strong>${issues.length} vi phạm</strong> | CCP: ${issues.filter(i=>i.verdict==='CCP').length} | RISK: ${issues.filter(i=>i.verdict==='RISK').length} | NOK: ${issues.filter(i=>i.verdict==='NOK').length}</div>`:''}
+        <table><thead><tr><th>Nhóm</th><th>Hạng mục</th><th>Loại</th><th>Kết quả</th><th>Điểm</th></tr></thead><tbody>${rows}</tbody></table>
+        ${rec.note?`<div style="margin-top:10px;font-size:12px"><strong>Nhận xét:</strong> ${rec.note}</div>`:''}
+        ${rec.actionPlan?`<div style="margin-top:6px;font-size:12px"><strong>Action plan:</strong> ${rec.actionPlan}</div>`:''}
+        <div style="margin-top:28px;display:flex;justify-content:space-between">
+          <div style="width:200px;border-top:1px solid #333;padding-top:8px;text-align:center;font-size:12px">Người audit</div>
+          <div style="width:200px;border-top:1px solid #333;padding-top:8px;text-align:center;font-size:12px">Đại diện cửa hàng</div>
+        </div></body></html>`);
+      pWin.document.close();
+      setTimeout(()=>pWin.print(),500);
+    }
+
+    // ── exportDetailXLSX ─────────────────────────────────
+    function exportDetailXLSX(store, timestamp) {
+      const rec=(_auditDirectData.allResults||[]).find(r=>r.store===store&&(!timestamp||r.timestamp===timestamp))
+             ||(_auditDirectData.auditList||[]).find(r=>r.store===store);
+      if(!rec){toast('Không có dữ liệu','twarn');return;}
+      const rows=[
+        ['Cửa hàng',rec.store],['Ngày audit',fmtViDate(rec.timestamp)],
+        ['Người audit',safeAuditorName(rec.auditor)],['Loại',rec.auditType||''],
+        ['Điểm %',rec.pct],['Đạt/Tối đa',`${rec.achieved}/${rec.effectiveMax}`],
+        ['NA',rec.naTotal],['Trạng thái',rec.status],[],
+        ['Nhóm','Hạng mục','Loại tiêu chí','Kết quả','Điểm đạt','Điểm tối đa']
+      ];
+      (rec.checklist||[]).forEach(item=>{
+        const ans=(rec.answers||{})[item.id]||'';
+        const isOK=ans==='Đạt'||ans==='OK', isNA=ans.includes('N/A')||ans==='';
+        rows.push([item.group,item.item,item.type,isNA?'N/A':isOK?'Đạt':'Không đạt',isNA?'':isOK?item.maxPts:0,item.maxPts]);
+      });
+      exportXLSX(rows,`AuditChiTiet_${store.replace(/\s/g,'_')}`);
+    }
+
+    // ── Legacy stubs ───────────────────────────────────────
+    function loadAuditData()      { return loadAuditDirect(); }
+    function loadAuditCriteria()  { return Promise.resolve(); }
+    function renderAuditForm()    {}
+    function renderAuditGuide()   {}
+    function calcAuditScore()     {}
+    function loadSecretAudit()    { return loadKHBA(); }
+    function renderAuditStats()   {}
+    function renderAuditTable()   {}
+    function aiSecretAnalysis()   { return aiKHBAAnalysis(); }
+    function viewAuditReport(s)   { openAuditReportForStore(s,''); }
+    function aiGenAuditReport()   { return genAuditReport(); }
+    function exportAuditData()    { return exportAuditDirectXLSX(); }
+    function exportAuditReport()  { return printAuditReport(); }
+    function openAuditEmailModal(){ return sendAuditReportEmail(); }
+    function saveAudit()          { toast('⚠️ Dùng Google Form để ghi nhận audit chính thức','twarn'); }
+    function aiAuditAdvice()      { return aiAuditAnalysis(); }
+    async function sendAuditEmail() {}
 
     // ════════════════════════════════════════
     //  STAFF / HR

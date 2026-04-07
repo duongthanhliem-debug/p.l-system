@@ -4488,6 +4488,9 @@ Dương Thanh Liêm – Operations Phúc Tea`;
       if (p.length === 2) return `Tháng ${parseInt(p[1])}/${p[0]}`;
       return val;
     }
+
+    function updatePlanPeriodLabel() {
+      const v = $('plan-period-type') ? $('plan-period-type').value : 'month';
       const el = $('plan-period-label');
       if (el) el.textContent = v === 'quarter' ? 'Quý' : 'Tháng';
     }
